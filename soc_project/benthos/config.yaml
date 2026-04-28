@@ -1,0 +1,89 @@
+http:
+  enabled: true
+  address: "0.0.0.0:4195"
+
+input:
+  stdin:
+    codec: lines
+
+pipeline:
+  processors:
+    - mapping: |
+        let raw = content().string()
+        let is_suricata = $raw.contains("\"event_type\"")
+        let is_alert    = $raw.contains("\"event_type\":\"alert\"")
+        let is_tetragon = $raw.contains("process_kprobe") || $raw.contains("process_exec")
+
+        let job = if $is_suricata { "suricata" } else { "tetragon" }
+
+        let level = if $is_suricata {
+          if $raw.contains("\"alert\"") { "critical" }
+          else if $raw.contains("\"ssh\"")  { "warn" }
+          else { "info" }
+        } else {
+          if $raw.contains("SIGKILL") || $raw.contains("kprobe") { "warn" }
+          else { "info" }
+        }
+
+        meta raw_line   = $raw
+        meta is_alert   = if ($is_alert || $is_tetragon) { "true" } else { "false" }
+
+        # Filter out noisy events to prevent VictoriaLogs exhaustion
+        if $is_suricata && !$is_alert {
+          root = deleted()
+        } else if !$is_suricata && !$is_tetragon {
+          root = deleted()
+        } else {
+
+        root = {
+          "streams": [{
+            "stream": {
+              "job":   $job,
+              "host":  env("HOSTNAME").or("soc-host"),
+              "level": $level
+            },
+            "values": [[
+              now().ts_unix_nano().string(),
+              $raw
+            ]]
+          }]
+        }
+        }
+
+output:
+  broker:
+    outputs:
+      - http_client:
+          url: "http://victorialogs:9428/loki/api/v1/push"
+          verb: POST
+          headers:
+            Content-Type: application/json
+          max_in_flight: 16
+          batching:
+            count: 10
+            period: 1s
+          retries: 3
+          timeout: 10s
+
+      - processors:
+          - mapping: |
+              let is_alert = meta("is_alert")
+              root = if $is_alert == "true" {
+                {"raw": meta("raw_line")}
+              } else {
+                deleted()
+              }
+        http_client:
+          url: "http://ml-engine:8000/ingest"
+          verb: POST
+          headers:
+            Content-Type: application/json
+          max_in_flight: 8
+          batching:
+            count: 1
+            period: 500ms
+          retries: 2
+          timeout: 15s
+
+metrics:
+  prometheus: {}
