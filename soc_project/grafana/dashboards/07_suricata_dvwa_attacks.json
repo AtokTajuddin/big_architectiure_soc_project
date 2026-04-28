@@ -1,0 +1,240 @@
+{
+  "id": null,
+  "uid": "suricata-dvwa-07",
+  "title": "07 - Suricata IDS + DVWA Attack Detection",
+  "description": "Real-time Suricata IDS alerts from DVWA. Covers OWASP Top 10 attacks, evasion techniques, CVE enrichment, and live attack logs.",
+  "tags": ["suricata", "dvwa", "owasp", "ids", "soc"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "time": {"from": "now-1h", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "🔴 Total ML Ingest Events",
+      "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [{"expr": "sum(ml_ingest_events_total)", "legendFormat": "Total"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 20}, {"color": "red", "value": 100}]}, "mappings": []}}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "🌐 Suricata Events (ML)",
+      "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [{"expr": "sum(ml_ingest_events_total{source=\"suricata\"})", "legendFormat": "Suricata"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 10}, {"color": "red", "value": 50}]}, "mappings": []}}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "🎭 Evasion Decoded (ML)",
+      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [{"expr": "sum(ml_evasion_detected_total)", "legendFormat": "Evasion"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}, "mappings": []}}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "🦠 CVE Matches (Suricata→ML)",
+      "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [{"expr": "sum(ml_cve_detections_total{source=\"suricata\"})", "legendFormat": "CVE"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}, "mappings": []}}
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "⚠️ High Severity Threats",
+      "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [{"expr": "sum(ml_cve_detections_total{severity=~\"high|critical\"})", "legendFormat": "High+Critical"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}, "mappings": []}}
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "🔵 Tetragon Kernel Events",
+      "gridPos": {"x": 20, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [{"expr": "sum(ml_ingest_events_total{source=\"tetragon\"})", "legendFormat": "Tetragon"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 5}]}, "mappings": []}}
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "🚨 SOC AUTO-LABEL — Active Threats (Real-time CVE + OWASP + Severity)",
+      "description": "Auto-labeled threats from ML engine. SOC worker dapat langsung lihat CVE, OWASP, severity, dan patch steps tanpa perlu investigasi manual.",
+      "gridPos": {"x": 0, "y": 4, "w": 24, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [
+        {
+          "expr": "sort_desc(ml_cve_detections_total)",
+          "legendFormat": "{{cve_id}} | {{owasp}} | sev={{severity}} | src={{source}}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {"id": "organize", "options": {
+          "renameByName": {
+            "cve_id": "CVE ID",
+            "owasp": "OWASP Category",
+            "severity": "Severity",
+            "source": "Source",
+            "Value": "Hit Count"
+          },
+          "excludeByName": {"Time": true, "__name__": true, "job": true, "instance": true}
+        }}
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Severity"},
+            "properties": [
+              {"id": "custom.displayMode", "value": "color-background"},
+              {"id": "thresholds", "value": {"steps": [
+                {"color": "blue", "value": null},
+                {"color": "yellow", "value": 0},
+                {"color": "orange", "value": 0},
+                {"color": "red", "value": 0}
+              ]}},
+              {"id": "mappings", "value": [
+                {"type": "value", "options": {"low": {"color": "blue", "index": 0, "text": "🔵 LOW"}}},
+                {"type": "value", "options": {"medium": {"color": "yellow", "index": 1, "text": "🟡 MEDIUM"}}},
+                {"type": "value", "options": {"high": {"color": "orange", "index": 2, "text": "🟠 HIGH"}}},
+                {"type": "value", "options": {"critical": {"color": "red", "index": 3, "text": "🔴 CRITICAL"}}}
+              ]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "CVE ID"},
+            "properties": [{"id": "links", "value": [{"title": "NVD CVE Detail", "url": "https://nvd.nist.gov/vuln/detail/${__value.raw}", "targetBlank": true}]}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Hit Count"},
+            "properties": [
+              {"id": "custom.displayMode", "value": "lcd-gauge"},
+              {"id": "color", "value": {"mode": "continuous-RdYlGr", "seriesBy": "last"}},
+              {"id": "thresholds", "value": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 5}, {"color": "red", "value": 20}]}}
+            ]
+          }
+        ]
+      },
+      "options": {"sortBy": [{"displayName": "Hit Count", "desc": true}]}
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Suricata Alerts Over Time by Attack Type",
+      "gridPos": {"x": 0, "y": 12, "w": 14, "h": 8},
+      "datasource": {"type": "loki", "uid": "P8855254D92C56053"},
+      "targets": [
+        {"expr": "count_over_time({job=\"suricata\"} |= \"\\\"event_type\\\":\\\"alert\\\"\" |= \"SQLi\" [1m])", "legendFormat": "SQL Injection"},
+        {"expr": "count_over_time({job=\"suricata\"} |= \"\\\"event_type\\\":\\\"alert\\\"\" |= \"XSS\" [1m])", "legendFormat": "XSS"},
+        {"expr": "count_over_time({job=\"suricata\"} |= \"\\\"event_type\\\":\\\"alert\\\"\" |= \"Command Injection\" [1m])", "legendFormat": "Command Injection"},
+        {"expr": "count_over_time({job=\"suricata\"} |= \"\\\"event_type\\\":\\\"alert\\\"\" |= \"LFI\" [1m])", "legendFormat": "LFI / Path Traversal"},
+        {"expr": "count_over_time({job=\"suricata\"} |= \"\\\"event_type\\\":\\\"alert\\\"\" |= \"SSRF\" [1m])", "legendFormat": "SSRF"},
+        {"expr": "count_over_time({job=\"suricata\"} |= \"\\\"event_type\\\":\\\"alert\\\"\" |= \"EVASION\" [1m])", "legendFormat": "Evasion Technique"},
+        {"expr": "count_over_time({job=\"suricata\"} |= \"\\\"event_type\\\":\\\"alert\\\"\" |= \"Brute Force\" [1m])", "legendFormat": "Brute Force"},
+        {"expr": "count_over_time({job=\"suricata\"} |= \"\\\"event_type\\\":\\\"alert\\\"\" |= \"Webshell\" [1m])", "legendFormat": "Webshell Upload"}
+      ],
+      "fieldConfig": {"defaults": {"custom": {"lineWidth": 2}}}
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Evasion Technique Breakdown (ML Decoded)",
+      "gridPos": {"x": 14, "y": 12, "w": 10, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [
+        {"expr": "ml_evasion_detected_total{technique=\"base64_encoding\"}", "legendFormat": "Base64"},
+        {"expr": "ml_evasion_detected_total{technique=\"double_url_encoding\"}", "legendFormat": "Double URL Encode"},
+        {"expr": "ml_evasion_detected_total{technique=\"url_encoding\"}", "legendFormat": "URL Encoding"},
+        {"expr": "ml_evasion_detected_total{technique=\"php_eval_base64\"}", "legendFormat": "PHP eval(base64)"},
+        {"expr": "ml_evasion_detected_total{technique=\"html_entity_encoding\"}", "legendFormat": "HTML Entity"},
+        {"expr": "ml_evasion_detected_total{technique=\"unicode_fullwidth\"}", "legendFormat": "Unicode Fullwidth"},
+        {"expr": "ml_evasion_detected_total{technique=\"sql_comment_injection\"}", "legendFormat": "SQL Comment /**/"}
+      ],
+      "fieldConfig": {"defaults": {"custom": {"lineWidth": 2}}}
+    },
+    {
+      "id": 20,
+      "type": "piechart",
+      "title": "DVWA Attack Distribution (OWASP)",
+      "gridPos": {"x": 0, "y": 12, "w": 8, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [
+        {"expr": "sum by (owasp) (ml_cve_detections_total{source=\"suricata\"})", "legendFormat": "{{owasp}}"}
+      ],
+      "options": {"pieType": "donut", "displayLabels": ["name", "percent"]}
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "CVE Detections by ID (Top 5)",
+      "gridPos": {"x": 8, "y": 12, "w": 16, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "P4169E866C3094E38"},
+      "targets": [
+        {"expr": "topk(5, sum by (cve_id) (rate(ml_cve_detections_total{source=\"suricata\"}[5m])))", "legendFormat": "{{cve_id}}"}
+      ],
+      "fieldConfig": {"defaults": {"custom": {"lineWidth": 2}}}
+    },
+    {
+      "id": 30,
+      "type": "logs",
+      "title": "Live Suricata IDS Alerts",
+      "gridPos": {"x": 0, "y": 20, "w": 24, "h": 10},
+      "datasource": {"type": "loki", "uid": "P8855254D92C56053"},
+      "targets": [{
+        "expr": "{job=\"suricata\"} | json | event_type = `alert`",
+        "legendFormat": ""
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "maxLines": 200,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 31,
+      "type": "logs",
+      "title": "Live Evasion Decoded Payloads (ML Engine)",
+      "gridPos": {"x": 0, "y": 30, "w": 24, "h": 8},
+      "datasource": {"type": "loki", "uid": "P8855254D92C56053"},
+      "targets": [{
+        "expr": "{job=\"ml-cve\"} |= \"EVASION\"",
+        "legendFormat": ""
+      }],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "maxLines": 100,
+        "sortOrder": "Descending"
+      }
+    }
+  ],
+  "templating": {"list": []},
+  "annotations": {"list": []},
+  "links": [
+    {"title": "ML CVE Detection", "url": "/d/ml-cve-04", "type": "link"},
+    {"title": "Master Overview", "url": "/d/mini-soc-01", "type": "link"}
+  ]
+}

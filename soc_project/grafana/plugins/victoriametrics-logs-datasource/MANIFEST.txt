@@ -1,0 +1,57 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+{
+  "manifestVersion": "2.0.0",
+  "signatureType": "commercial",
+  "signedByOrg": "victoriametrics",
+  "signedByOrgName": "VictoriaMetrics",
+  "plugin": "victoriametrics-logs-datasource",
+  "version": "0.26.3",
+  "time": 1773149886162,
+  "keyId": "7e4d0c6a708866e7",
+  "files": {
+    "img/derived_fields_explore.png": "9c7af2086b0aaff09ba45626952388b64441edf16e8f9f351b2d63b2e5c44a2c",
+    "img/panel_time_series.png": "84c6d65676732577213af0e6d747e3ff62f9ae132b3a3388d3143bacc9527643",
+    "img/panel_stat.png": "92bf58a0864fbc9016fc38849bc0ced0b439ad7a50c81b1c442404755c7c9932",
+    "img/trace_to_logs.png": "98380f1c8dc06f38232c1259f73af31217f559693c825867d4611dae16702d90",
+    "img/panel_table.png": "59b1be7c1eb852bfe721cdbc91d7430104cd13aab8027b4b9b86ff2939901d94",
+    "img/multitenancy_configuration.png": "249974b98052ee90816a62d367e07602fb405c6c6adc96c586daefd3c155956b",
+    "img/datasource.png": "d3f39adc531bf4e008fc687b247a464550ab1f4e2b1f8a9c9e92f72963ea153c",
+    "img/word_filter.png": "0bfe2447a18a37f0fd9d9e03216d2f6124e4101d6c26b6acd8b7d99fd73cd10e",
+    "img/alerting.png": "a157cc2f772d27a12d91315ffadac9a654aa85ab593aac5108f64e4cfb7cab85",
+    "img/explore.png": "7f882322027212e3fe51ea950a3f727ebfaa16f52818c6921819948f96c473f3",
+    "img/dashboard.png": "ac385d46196c8fa66acfe6fba229eaa15b5783ae5eecf03018376c54f6b037e2",
+    "img/panel_heatmap.png": "d7e32ec4fab80c9551de8a1cf1d7cfe7233ce4f2bb6186f6fd3a04fa44f81de2",
+    "img/panel_logs.png": "ca28b9bf150a221e8cfdee8c7197b7d8f1cf878e540279bcceb5bc5604d621d5",
+    "img/panel_table_transformation.png": "9862def4b261c987f34bf696fa3a1e4d803f36477eb268a8a9256c6fbdec84f0",
+    "img/derived_fields_cfg.png": "d1f5abca44ddbda4d25e43120ef05ac4c4de1af5c0020b7d8a59d03438c888a1",
+    "img/logo.svg": "7f23f0c7190969944b31ed09a5f70534f025e3d6dbf4d99fb061b73bf287a4c3",
+    "img/extra_filters_explore_page.png": "a621e297c88a949a32b49d48c0ad36b2c97b7dd02f3e5d25b7dd26aa8e88d046",
+    "README.md": "5fef993d5e0070d923e6ff8e89f5fa4f95ba61c92200228b2d9776388554d41d",
+    "module.js.map": "14a7672fc2d2f41c30839a4cc6939f1cea82cc0a8c0569b3852f243b8f6f37ef",
+    "victoriametrics_logs_backend_plugin_freebsd_amd64": "39316234257ab9500d5a66e93b7868b2f63d3a6a02f83191dc152649e5b0c23b",
+    "CHANGELOG.md": "5d02469a78b451bb93a219ade08b2bd662b84edd821f3ea4d6127493232a647c",
+    "LICENSE": "4c3d102580bb7fc8f1beaee70a439aaacd14fa0a04598df8c246ba09906808e0",
+    "victoriametrics_logs_backend_plugin_linux_s390x": "286081a9a9e174726471c5eb4524450d3c7cf836fddf7f7ca4eca930c5d25d2a",
+    "victoriametrics_logs_backend_plugin_windows_amd64.exe": "f1e5ab7ef25c133dd6cad74af532d514d1f5af76d9c9b8b1f842b01f5051098b",
+    "module.js": "7a1a503a490f6a2523a80d159a612319e5b9bf711f92dce2befa723069f2bb05",
+    "victoriametrics_logs_backend_plugin_linux_arm64": "dd63392302c2663970863610450f3919c1b8d921a9737680420da047d4bfb2ea",
+    "victoriametrics_logs_backend_plugin_linux_amd64": "1c2e67cc2bc3225315df66015d326d4c203af2344f5eff1461f84108db9cf3dc",
+    "victoriametrics_logs_backend_plugin_linux_arm": "092590a70b0059055dc36eeb938140267a413e3d8c2a454ab51431adb4ed2ed9",
+    "victoriametrics_logs_backend_plugin_darwin_arm64": "dd57db9b821ea138e9363c4dc1a5915500d37ee5972a4eeb3fe4d9717f0e303d",
+    "go_plugin_build_manifest": "40a8a4e4e61659f0b43bbb59f44d6bd2c2038ebeacedb5bb279ffdffe9678f0d",
+    "victoriametrics_logs_backend_plugin_darwin_amd64": "3b1e8e7ce13dcbd17ddc5c2edfc53b70a4035c9b8fa569640c1f2ab9bc698799",
+    "plugin.json": "44fc9f4a85af7662d1ebe90914d3bdbd1bdc16dcc74306fb894823bfb72c2746"
+  }
+}
+-----BEGIN PGP SIGNATURE-----
+
+wsA+BAETCgBtBYJpsB6+CRB+TQxqcIhm50UUAAAAAAAcACBzYWx0QG5vdGF0
+aW9ucy5vcGVucGdwanMub3Jnq1uAW7pLopClOJOG9w5w8R6mWnuU+2XeOhST
+Iwt3Bp0WIQTzOyW2kQdOhGNlcPN+TQxqcIhm5wAAbP4CCQELPu1NaBjNmuSU
+wi/28GtVLk2tgTr5DIt4uRAZnBjFLoSocplSLzJk6KaF3mYL1PCctj9+lpUk
+a0mbMOyaIRW1xwIFEveufSohZqfej6bR+FPFtiMdbDbrTMzDQ1a8Xv2WWSKq
+hhmj8jvm4QX7ScWYx21v4k1r82wq53UkXxsuPjYqaws=
+=ns/D
+-----END PGP SIGNATURE-----
