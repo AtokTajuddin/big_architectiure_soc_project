@@ -1,0 +1,45 @@
+{
+  "name": "SOC-A02-Cryptographic-Failures",
+  "description": "OWASP A02:2021 — Detect cleartext credential transmission, weak TLS, and data exposure from Suricata alerts enriched with CVE/NIST guidance.",
+  "tags": ["soc", "owasp", "A02", "cryptographic", "tls", "credential-exposure"],
+  "actions": [
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Log Crypto Failure",
+      "id": "action_log_a02",
+      "parameters": [
+        {"name": "call", "value": "CRYPTOGRAPHIC FAILURE:\nSignature: $exec.signature\nSource: $exec.src_ip\nCVE: $exec.cve | CWE: $exec.cwe\nOWASP: $exec.owasp_id — $exec.owasp_name"}
+      ],
+      "position": {"x": 400, "y": 200}
+    },
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "SOC L1 Crypto Hardening",
+      "id": "action_harden_a02",
+      "parameters": [
+        {"name": "call", "value": "CRYPTO HARDENING REQUIRED:\nCVE: $exec.cve\nCWE: $exec.cwe\nNIST Control: $exec.nist_iso_controls\nMITRE Mitigation: $exec.mitre_mitigation\nActions: $exec.patch_steps\nEnforce: TLS 1.2+, AES-256, disable RC4/DES"}
+      ],
+      "position": {"x": 400, "y": 350}
+    }
+  ],
+  "triggers": [
+    {
+      "app_name": "Webhook",
+      "app_version": "1.0.0",
+      "label": "ML Engine Webhook",
+      "id": "trigger_webhook_a02",
+      "type": "WEBHOOK",
+      "status": "running",
+      "parameters": [
+        {"name": "info", "value": "Receives cryptographic failure alerts from SOC ML Engine"},
+        {"name": "auth_data", "value": ""}
+      ],
+      "position": {"x": 400, "y": 50}
+    }
+  ],
+  "start": "trigger_webhook_a02"
+}

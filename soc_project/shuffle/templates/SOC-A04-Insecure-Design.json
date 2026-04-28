@@ -1,0 +1,45 @@
+{
+  "name": "SOC-A04-Insecure-Design",
+  "description": "OWASP A04:2021 — Detect insecure design patterns including API abuse, business logic attacks, and path traversal.",
+  "tags": ["soc", "owasp", "A04", "path-traversal", "api-abuse", "insecure-design"],
+  "actions": [
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Log Design Flaw Alert",
+      "id": "action_log_a04",
+      "parameters": [
+        {"name": "call", "value": "INSECURE DESIGN DETECTED:\nSignature: $exec.signature\nSource: $exec.src_ip\nCVE: $exec.cve | CWE: $exec.cwe\nOWASP: $exec.owasp_id"}
+      ],
+      "position": {"x": 400, "y": 200}
+    },
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Architecture Review Alert",
+      "id": "action_review_a04",
+      "parameters": [
+        {"name": "call", "value": "ARCHITECTURE REVIEW REQUIRED:\nCVE: $exec.cve\nCWE: $exec.cwe\nNIST: $exec.nist_iso_controls\nMITRE: $exec.mitre_mitigation\nDesign Fix: $exec.patch_steps\nReview: input validation, rate limiting, threat modeling"}
+      ],
+      "position": {"x": 400, "y": 350}
+    }
+  ],
+  "triggers": [
+    {
+      "app_name": "Webhook",
+      "app_version": "1.0.0",
+      "label": "ML Engine Webhook",
+      "id": "trigger_webhook_a04",
+      "type": "WEBHOOK",
+      "status": "running",
+      "parameters": [
+        {"name": "info", "value": "Receives insecure design alerts from SOC ML Engine"},
+        {"name": "auth_data", "value": ""}
+      ],
+      "position": {"x": 400, "y": 50}
+    }
+  ],
+  "start": "trigger_webhook_a04"
+}

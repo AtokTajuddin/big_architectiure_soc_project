@@ -1,0 +1,58 @@
+{
+  "name": "SOC-A03-Injection",
+  "description": "OWASP A03:2021 — Detect and respond to SQL/Command/XSS Injection from Suricata IDS alerts enriched by SOC ML Engine with CVE/CWE data.",
+  "tags": ["soc", "owasp", "A03", "injection", "sqli", "suricata"],
+  "actions": [
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Log Injection Alert",
+      "id": "action_log_a03",
+      "parameters": [
+        {"name": "call", "value": "INJECTION DETECTED: $exec.signature | SRC: $exec.src_ip -> $exec.dest_ip | CVE: $exec.cve | CWE: $exec.cwe | Severity: $exec.severity"}
+      ],
+      "position": {"x": 400, "y": 200}
+    },
+    {
+      "app_name": "HTTP",
+      "app_version": "1.4.0",
+      "name": "post",
+      "label": "Block Source IP (Firewall API)",
+      "id": "action_block_a03",
+      "parameters": [
+        {"name": "url", "value": "http://your-firewall-api/block"},
+        {"name": "headers", "value": "Content-Type=application/json"},
+        {"name": "body", "value": "{\"ip\": \"$exec.src_ip\", \"reason\": \"OWASP A03 Injection — $exec.cve\", \"duration\": \"3600\"}"}
+      ],
+      "position": {"x": 400, "y": 350}
+    },
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "SOC L1 Patch Briefing",
+      "id": "action_patch_a03",
+      "parameters": [
+        {"name": "call", "value": "PATCH REQUIRED:\nVulnerability: $exec.owasp_name ($exec.owasp_id)\nAffected CVE: $exec.cve\nCWE Classification: $exec.cwe\nNIST Controls: $exec.nist_iso_controls\nMITRE Mitigation: $exec.mitre_mitigation\nSteps: $exec.patch_steps"}
+      ],
+      "position": {"x": 400, "y": 500}
+    }
+  ],
+  "triggers": [
+    {
+      "app_name": "Webhook",
+      "app_version": "1.0.0",
+      "label": "ML Engine Webhook",
+      "id": "trigger_webhook_a03",
+      "type": "WEBHOOK",
+      "status": "running",
+      "parameters": [
+        {"name": "info", "value": "Receives injection alerts from SOC ML Engine /ingest"},
+        {"name": "auth_data", "value": ""}
+      ],
+      "position": {"x": 400, "y": 50}
+    }
+  ],
+  "start": "trigger_webhook_a03"
+}

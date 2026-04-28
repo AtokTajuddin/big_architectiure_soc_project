@@ -1,0 +1,58 @@
+{
+  "name": "SOC-A05-DoS-Misconfig",
+  "description": "OWASP A05:2021 — Detect DoS attacks and security misconfiguration. Rate-limit and quarantine attack source, alert SOC L1 with NIST remediation.",
+  "tags": ["soc", "owasp", "A05", "dos", "ddos", "misconfiguration"],
+  "actions": [
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Log DoS Alert",
+      "id": "action_log_a05",
+      "parameters": [
+        {"name": "call", "value": "DoS/MISCONFIG DETECTED:\nSignature: $exec.signature\nAttacker: $exec.src_ip\nTarget: $exec.dest_ip\nCVE: $exec.cve | CWE: $exec.cwe"}
+      ],
+      "position": {"x": 400, "y": 200}
+    },
+    {
+      "app_name": "HTTP",
+      "app_version": "1.4.0",
+      "name": "post",
+      "label": "Apply Rate Limiting",
+      "id": "action_ratelimit_a05",
+      "parameters": [
+        {"name": "url", "value": "http://your-firewall-api/ratelimit"},
+        {"name": "headers", "value": "Content-Type=application/json"},
+        {"name": "body", "value": "{\"ip\": \"$exec.src_ip\", \"rate\": \"10/min\", \"reason\": \"DoS OWASP A05\", \"duration\": \"3600\"}"}
+      ],
+      "position": {"x": 400, "y": 350}
+    },
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "SOC L1 Hardening Guide",
+      "id": "action_harden_a05",
+      "parameters": [
+        {"name": "call", "value": "HARDENING REQUIRED:\nNIST: $exec.nist_iso_controls\nMITRE: $exec.mitre_mitigation\nSteps: $exec.patch_steps\nRate-limited: $exec.src_ip (1h)"}
+      ],
+      "position": {"x": 400, "y": 500}
+    }
+  ],
+  "triggers": [
+    {
+      "app_name": "Webhook",
+      "app_version": "1.0.0",
+      "label": "ML Engine Webhook",
+      "id": "trigger_webhook_a05",
+      "type": "WEBHOOK",
+      "status": "running",
+      "parameters": [
+        {"name": "info", "value": "Receives DoS/misconfig alerts from SOC ML Engine"},
+        {"name": "auth_data", "value": ""}
+      ],
+      "position": {"x": 400, "y": 50}
+    }
+  ],
+  "start": "trigger_webhook_a05"
+}

@@ -1,0 +1,58 @@
+{
+  "name": "SOC-A07-Auth-Failures",
+  "description": "OWASP A07:2021 — Detect SSH brute force and authentication failures from Suricata. Auto-block source IP and alert SOC L1 with CVE/NIST remediation guidance.",
+  "tags": ["soc", "owasp", "A07", "brute-force", "ssh", "auth"],
+  "actions": [
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Log Auth Failure",
+      "id": "action_log_a07",
+      "parameters": [
+        {"name": "call", "value": "AUTH FAILURE DETECTED: $exec.signature | Attacker: $exec.src_ip | Target: $exec.dest_ip | CVE: $exec.cve | Severity: $exec.severity"}
+      ],
+      "position": {"x": 400, "y": 200}
+    },
+    {
+      "app_name": "HTTP",
+      "app_version": "1.4.0",
+      "name": "post",
+      "label": "Auto-Block Attacker IP",
+      "id": "action_block_a07",
+      "parameters": [
+        {"name": "url", "value": "http://your-firewall-api/block"},
+        {"name": "headers", "value": "Content-Type=application/json"},
+        {"name": "body", "value": "{\"ip\": \"$exec.src_ip\", \"reason\": \"SSH BruteForce OWASP A07 — $exec.cve\", \"duration\": \"86400\"}"}
+      ],
+      "position": {"x": 400, "y": 350}
+    },
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "SOC L1 Remediation Guide",
+      "id": "action_remediate_a07",
+      "parameters": [
+        {"name": "call", "value": "REMEDIATION GUIDE A07:\nCVE: $exec.cve\nCWE: $exec.cwe\nNIST Control: $exec.nist_iso_controls\nMITRE: $exec.mitre_mitigation\nAction: $exec.patch_steps\nBlocked IP: $exec.src_ip (24h)"}
+      ],
+      "position": {"x": 400, "y": 500}
+    }
+  ],
+  "triggers": [
+    {
+      "app_name": "Webhook",
+      "app_version": "1.0.0",
+      "label": "ML Engine Webhook",
+      "id": "trigger_webhook_a07",
+      "type": "WEBHOOK",
+      "status": "running",
+      "parameters": [
+        {"name": "info", "value": "Receives auth failure alerts from SOC ML Engine"},
+        {"name": "auth_data", "value": ""}
+      ],
+      "position": {"x": 400, "y": 50}
+    }
+  ],
+  "start": "trigger_webhook_a07"
+}

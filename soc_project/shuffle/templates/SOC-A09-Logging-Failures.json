@@ -1,0 +1,45 @@
+{
+  "name": "SOC-A09-Logging-Failures",
+  "description": "OWASP A09:2021 — Detect log injection, log tampering, and insufficient monitoring gaps. Alert SOC L1 to investigate audit trail integrity.",
+  "tags": ["soc", "owasp", "A09", "log-injection", "audit", "monitoring"],
+  "actions": [
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Log Security Monitoring Failure",
+      "id": "action_log_a09",
+      "parameters": [
+        {"name": "call", "value": "LOGGING/MONITORING FAILURE:\nSignature: $exec.signature\nSource: $exec.src_ip\nCVE: $exec.cve | CWE: $exec.cwe\nRisk: Audit trail may be compromised"}
+      ],
+      "position": {"x": 400, "y": 200}
+    },
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Audit Trail Investigation",
+      "id": "action_audit_a09",
+      "parameters": [
+        {"name": "call", "value": "AUDIT INVESTIGATION REQUIRED:\nCVE: $exec.cve\nCWE: $exec.cwe\nNIST: $exec.nist_iso_controls\nMITRE: $exec.mitre_mitigation\nSteps: $exec.patch_steps\nCheck: VictoriaLogs at http://grafana:3000 for anomalies\nVerify: Tetragon eBPF audit trail integrity"}
+      ],
+      "position": {"x": 400, "y": 350}
+    }
+  ],
+  "triggers": [
+    {
+      "app_name": "Webhook",
+      "app_version": "1.0.0",
+      "label": "ML Engine Webhook",
+      "id": "trigger_webhook_a09",
+      "type": "WEBHOOK",
+      "status": "running",
+      "parameters": [
+        {"name": "info", "value": "Receives logging/monitoring failure alerts from SOC ML Engine"},
+        {"name": "auth_data", "value": ""}
+      ],
+      "position": {"x": 400, "y": 50}
+    }
+  ],
+  "start": "trigger_webhook_a09"
+}

@@ -1,0 +1,58 @@
+{
+  "name": "SOC-A08-Integrity-Failures",
+  "description": "OWASP A08:2021 — Detect software/data integrity failures including Log4Shell (CVE-2021-44228), deserialization exploits, and supply chain attacks.",
+  "tags": ["soc", "owasp", "A08", "log4shell", "rce", "deserialization"],
+  "actions": [
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Log RCE/Integrity Alert",
+      "id": "action_log_a08",
+      "parameters": [
+        {"name": "call", "value": "INTEGRITY FAILURE / RCE DETECTED:\nCVE: $exec.cve\nSignature: $exec.signature\nAttacker: $exec.src_ip -> $exec.dest_ip\nCWE: $exec.cwe\nSeverity: CRITICAL"}
+      ],
+      "position": {"x": 400, "y": 200}
+    },
+    {
+      "app_name": "HTTP",
+      "app_version": "1.4.0",
+      "name": "post",
+      "label": "Isolate Affected Host",
+      "id": "action_isolate_a08",
+      "parameters": [
+        {"name": "url", "value": "http://your-firewall-api/isolate"},
+        {"name": "headers", "value": "Content-Type=application/json"},
+        {"name": "body", "value": "{\"ip\": \"$exec.dest_ip\", \"reason\": \"RCE OWASP A08 $exec.cve — Host isolation\", \"duration\": \"86400\"}"}
+      ],
+      "position": {"x": 400, "y": 350}
+    },
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Critical Patch Alert SOC L1",
+      "id": "action_critical_a08",
+      "parameters": [
+        {"name": "call", "value": "!!! CRITICAL PATCH ALERT !!!\nCVE: $exec.cve (RCE/Integrity Failure)\nCWE: $exec.cwe\nNIST: $exec.nist_iso_controls\nMITRE: $exec.mitre_mitigation\nImmediate Actions:\n$exec.patch_steps\nIsolated Host: $exec.dest_ip\nPATCH DEADLINE: 24 HOURS"}
+      ],
+      "position": {"x": 400, "y": 500}
+    }
+  ],
+  "triggers": [
+    {
+      "app_name": "Webhook",
+      "app_version": "1.0.0",
+      "label": "ML Engine Webhook",
+      "id": "trigger_webhook_a08",
+      "type": "WEBHOOK",
+      "status": "running",
+      "parameters": [
+        {"name": "info", "value": "Receives RCE/integrity failure alerts from SOC ML Engine"},
+        {"name": "auth_data", "value": ""}
+      ],
+      "position": {"x": 400, "y": 50}
+    }
+  ],
+  "start": "trigger_webhook_a08"
+}

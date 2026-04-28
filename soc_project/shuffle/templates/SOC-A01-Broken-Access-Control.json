@@ -1,0 +1,45 @@
+{
+  "name": "SOC-A01-Broken-Access-Control",
+  "description": "OWASP A01:2021 — Auto-respond to privilege escalation and unauthorized access detected by Tetragon eBPF or Suricata. Logs alert, notifies SOC L1, and records CVE/CWE for patching.",
+  "tags": ["soc", "owasp", "A01", "tetragon", "privilege-escalation"],
+  "actions": [
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "Log ML Alert",
+      "id": "action_log_a01",
+      "parameters": [
+        {"name": "call", "value": "OWASP A01 ALERT: $exec.owasp_id | CVE: $exec.cve | CWE: $exec.cwe | SRC: $exec.src_ip | NIST: $exec.nist_iso_controls"}
+      ],
+      "position": {"x": 400, "y": 200}
+    },
+    {
+      "app_name": "Shuffle Tools",
+      "app_version": "1.2.0",
+      "name": "repeat_back_to_me",
+      "label": "SOC L1 Notification",
+      "id": "action_notify_a01",
+      "parameters": [
+        {"name": "call", "value": "SOC-L1 ACTION REQUIRED:\nThreat: $exec.owasp_name\nSource IP: $exec.src_ip\nCVE: $exec.cve\nMITRE: $exec.mitre_mitigation\nPatch Steps: $exec.patch_steps"}
+      ],
+      "position": {"x": 400, "y": 350}
+    }
+  ],
+  "triggers": [
+    {
+      "app_name": "Webhook",
+      "app_version": "1.0.0",
+      "label": "ML Engine Webhook",
+      "id": "trigger_webhook_a01",
+      "type": "WEBHOOK",
+      "status": "running",
+      "parameters": [
+        {"name": "info", "value": "Receives CVE/OWASP enriched alerts from SOC ML Engine"},
+        {"name": "auth_data", "value": ""}
+      ],
+      "position": {"x": 400, "y": 50}
+    }
+  ],
+  "start": "trigger_webhook_a01"
+}
