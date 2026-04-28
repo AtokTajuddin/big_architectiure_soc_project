@@ -144,15 +144,15 @@ flowchart LR
 |-------|----------|--------|----------------|----------------|
 | **Class 01** | **The Orchestrator** | **AtokTajuddin** | Big-picture architecture, service integration, and stack maintenance | Designs the end-to-end flow; integrates Suricata, Tetragon, Benthos, VictoriaLogs, VictoriaMetrics, Grafana, MISP, ML Engine, and Shuffle; maintains service reliability when failures happen; keeps every component aligned inside the Nexus Sentinel architecture |
 | **Class 02** | **The Intelligence Architect** | **AryaRefman** | Custom ML, enrichment logic, and ML-to-SOAR workflow connection | Builds the custom ML engine and its architecture; manages CVE/CWE/OWASP/NIST mapping; creates the logic that lets ML detection output trigger the correct Shuffle workflow; ensures SOAR automation can consume and act on custom ML results |
-| **Class 03** | **The Threat Emperor** | **muzidha** | Pentest validation, threat-flow testing, and custom detection rules | Executes pentest and attack simulations; validates that threats flow from IDS/IPS into the pipeline, custom ML, dashboard, and SOAR; creates custom Suricata/IDS/IPS rules; tests Shuffle workflows; verifies that every alert can be traced from attack execution to response action |
+| **Class 03** | **The Threat Validator** | **muzidha** | Pentest validation, threat-flow testing, and custom detection rules | Executes pentest and attack simulations; validates that threats flow from IDS/IPS into the pipeline, custom ML, dashboard, and SOAR; creates custom Suricata/IDS/IPS rules; tests Shuffle workflows; verifies that every alert can be traced from attack execution to response action |
 
 ### Role Identity
 
 | Role | Identity Statement |
 |------|--------------------|
 | **AtokTajuddin — The Nexus Orchestrator** | "design, integrate, and maintain the Nexus Sentinel architecture so every service stays connected, stable, and operational." |
-| **AryaRefman — *The Mindsmith** | "build the custom ML intelligence layer of Nexus Sentinel and connect it to SOAR logic so alerts become actionable response decisions." |
-| **muzidha — The Red Sentinel*** | "attack, test, and validate the full threat path so detection, dashboards, IDS/IPS rules, and SOAR automation work in real scenarios." |
+| **AryaRefman — The Mindsmith** | "build the custom ML intelligence layer of Nexus Sentinel and connect it to SOAR logic so alerts become actionable response decisions." |
+| **muzidha — The Red Sentinel** | "attack, test, and validate the full threat path so detection, dashboards, IDS/IPS rules, and SOAR automation work in real scenarios." |
 
 
 ---
