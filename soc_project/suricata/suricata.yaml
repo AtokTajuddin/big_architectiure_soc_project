@@ -1,0 +1,241 @@
+%YAML 1.1
+---
+# Suricata config — Mini SOC
+# Interface: eth0 (confirmed)
+
+vars:
+  address-groups:
+    HOME_NET: "[192.168.0.0/16,10.0.0.0/8,172.16.0.0/12]"
+    EXTERNAL_NET: "!$HOME_NET"
+    HTTP_SERVERS: "$HOME_NET"
+    SMTP_SERVERS: "$HOME_NET"
+    SQL_SERVERS: "$HOME_NET"
+    DNS_SERVERS: "$HOME_NET"
+    TELNET_SERVERS: "$HOME_NET"
+    AIM_SERVERS: "$EXTERNAL_NET"
+    DNP3_SERVER: "$HOME_NET"
+    DNP3_CLIENT: "$HOME_NET"
+    MODBUS_CLIENT: "$HOME_NET"
+    MODBUS_SERVER: "$HOME_NET"
+    ENIP_CLIENT: "$HOME_NET"
+    ENIP_SERVER: "$HOME_NET"
+  port-groups:
+    HTTP_PORTS: "80,8080,8000,8443,8888"
+    HTTPS_PORTS: "443,8443"
+    SSH_PORTS: "22"
+    SHELLCODE_PORTS: "!80"
+    ORACLE_PORTS: 1521
+    DNP3_PORTS: 20000
+    MODBUS_PORTS: 502
+    FILE_DATA_PORTS: "[$HTTP_PORTS,110,143]"
+    FTP_PORTS: 21
+    VXLAN_PORTS: 4789
+    TEREDO_PORTS: 3544
+
+default-log-dir: /var/log/suricata/
+
+stats:
+  enabled: yes
+  interval: 8
+
+outputs:
+  - fast:
+      enabled: no
+      filename: fast.log
+      append: yes
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      community-id: true
+      community-id-seed: 0
+      types:
+        - alert:
+            payload: yes
+            payload-buffer-size: 4kb
+            payload-printable: yes
+            packet: yes
+            metadata: yes
+        - anomaly:
+            enabled: yes
+        - http:
+            extended: yes
+        - dns:
+            version: 2
+        - tls:
+            extended: yes
+        - ssh
+        - flow
+        - stats:
+            totals: yes
+            threads: no
+            deltas: no
+  - stats:
+      enabled: yes
+      filename: stats.log
+      append: yes
+      totals: yes
+      threads: no
+
+af-packet:
+  - interface: soc-br0
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+    tpacket-v3: yes
+
+pcap:
+  - interface: soc-br0
+
+default-rule-path: /var/lib/suricata/rules
+rule-files:
+  - suricata.rules
+
+host-os-policy:
+  windows: [0.0.0.0/0]
+
+defrag:
+  memcap: 32mb
+  hash-size: 65536
+  trackers: 65535
+  max-frags: 65535
+  prealloc: yes
+  timeout: 60
+
+flow:
+  memcap: 32mb
+  hash-size: 65536
+  prealloc: 10000
+  emergency-recovery: 30
+
+vlan:
+  use-for-tracking: true
+
+flow-timeouts:
+  default:
+    new: 30
+    established: 300
+    closed: 0
+    bypassed: 100
+    emergency-new: 10
+    emergency-established: 100
+    emergency-closed: 0
+    emergency-bypassed: 50
+  tcp:
+    new: 60
+    established: 600
+    closed: 60
+    bypassed: 100
+    emergency-new: 5
+    emergency-established: 100
+    emergency-closed: 10
+    emergency-bypassed: 50
+  udp:
+    new: 30
+    established: 300
+    bypassed: 100
+    emergency-new: 10
+    emergency-established: 100
+    emergency-bypassed: 50
+  icmp:
+    new: 30
+    established: 300
+    bypassed: 100
+    emergency-new: 10
+    emergency-established: 100
+    emergency-bypassed: 50
+
+stream:
+  memcap: 32mb
+  checksum-validation: no
+  inline: auto
+  reassembly:
+    memcap: 64mb
+    depth: 1mb
+    toserver-chunk-size: 2560
+    toclient-chunk-size: 2560
+    randomize-chunk-size: yes
+
+host:
+  hash-size: 4096
+  prealloc: 1000
+  memcap: 32mb
+
+logging:
+  default-log-level: notice
+  outputs:
+    - console:
+        enabled: yes
+    - file:
+        enabled: yes
+        level: info
+        filename: /var/log/suricata/suricata.log
+
+detect:
+  profile: medium
+  custom-values:
+    toclient-groups: 3
+    toserver-groups: 25
+  sgh-mpm-context: auto
+  inspection-recursion-limit: 3000
+  prefilter:
+    default: mpm
+
+app-layer:
+  protocols:
+    tls:
+      enabled: yes
+      detection-ports:
+        dp: 443
+    dcerpc:
+      enabled: yes
+    ftp:
+      enabled: yes
+      memcap: 64mb
+    ssh:
+      enabled: yes
+      hassh: yes
+    smtp:
+      enabled: yes
+      raw-extraction: no
+    dns:
+      enabled: yes
+      version: 2
+    http:
+      enabled: yes
+      libhtp:
+        default-config:
+          personality: IDS
+          request-body-limit: 100kb
+          response-body-limit: 100kb
+          request-body-minimal-inspect-size: 32kb
+          request-body-inspect-window: 4kb
+          response-body-minimal-inspect-size: 40kb
+          response-body-inspect-window: 16kb
+          response-body-decompress-layer-limit: 2
+          http-body-inline: auto
+          double-decode-path: no
+          double-decode-query: no
+    smb:
+      enabled: yes
+      detection-ports:
+        dp: 139, 445
+    nfs:
+      enabled: yes
+    ikev2:
+      enabled: yes
+    krb5:
+      enabled: yes
+    snmp:
+      enabled: yes
+    rdp:
+      enabled: yes
+    tftp:
+      enabled: yes
+    quic:
+      enabled: yes
+    http2:
+      enabled: yes
+    rfb:
+      enabled: yes

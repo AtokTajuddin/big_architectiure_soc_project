@@ -1,0 +1,110 @@
+# Mini SOC — Custom Suricata IDS Rules
+# Interface: soc-br0 (Docker bridge — DVWA + all container traffic)
+
+# ══════════════════════════════════════════════════════════════════
+# DVWA — OWASP A03 SQL Injection
+# ══════════════════════════════════════════════════════════════════
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA SQLi UNION SELECT Attack"; flow:to_server,established; content:"UNION"; nocase; http_uri; content:"SELECT"; nocase; http_uri; within:60; classtype:web-application-attack; sid:9001001; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA SQLi OR 1=1 Boolean Blind"; flow:to_server,established; pcre:"/(\%27|')(\s|\+)*(or|OR|Or)(\s|\+)+(\%27|')?1(\%27|')?(\s|\+)*=(\s|\+)*(\%27|')?1/U"; classtype:web-application-attack; sid:9001002; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA SQLi Time-Based SLEEP"; flow:to_server,established; content:"SLEEP"; nocase; http_uri; content:"("; http_uri; within:5; classtype:web-application-attack; sid:9001003; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA SQLi DROP TABLE"; flow:to_server,established; content:"DROP"; nocase; http_uri; content:"TABLE"; nocase; http_uri; within:20; classtype:web-application-attack; sid:9001004; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA SQLi sqlmap Scanner"; flow:to_server,established; content:"sqlmap"; nocase; http_user_agent; classtype:web-application-attack; sid:9001005; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA SQLi Comment --"; flow:to_server,established; content:"--"; http_uri; classtype:web-application-attack; sid:9001006; rev:1;)
+
+# ══════════════════════════════════════════════════════════════════
+# DVWA — OWASP A03 XSS (Reflected + Stored + DOM)
+# ══════════════════════════════════════════════════════════════════
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA XSS Script Tag"; flow:to_server,established; content:"<script"; nocase; http_uri; classtype:web-application-attack; sid:9001010; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA XSS alert() Payload"; flow:to_server,established; content:"alert("; nocase; http_uri; classtype:web-application-attack; sid:9001011; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA XSS Event Handler"; flow:to_server,established; pcre:"/(onmouseover|onerror|onload|onclick|onfocus)=/iU"; classtype:web-application-attack; sid:9001012; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA XSS Stored POST"; flow:to_server,established; content:"<script"; nocase; http_client_body; classtype:web-application-attack; sid:9001014; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA XSS javascript: URI"; flow:to_server,established; content:"javascript:"; nocase; http_uri; classtype:web-application-attack; sid:9001015; rev:1;)
+
+# ══════════════════════════════════════════════════════════════════
+# DVWA — OWASP A03 Command Injection
+# ══════════════════════════════════════════════════════════════════
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA Command Injection POST pipe"; flow:to_server,established; content:"POST"; http_method; content:"/vulnerabilities/exec"; nocase; http_uri; classtype:web-application-attack; sid:9001020; rev:3;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA Command Injection cat passwd"; flow:to_server,established; content:"etc/passwd"; nocase; http_uri; classtype:web-application-attack; sid:9001021; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA Command Injection wget"; flow:to_server,established; content:"wget"; nocase; http_uri; classtype:web-application-attack; sid:9001022; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA Command Injection curl"; flow:to_server,established; content:"curl"; nocase; http_uri; classtype:web-application-attack; sid:9001023; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA RCE Reverse Shell bash"; flow:to_server,established; content:"bash"; nocase; http_uri; content:"-i"; nocase; http_uri; within:20; classtype:web-application-attack; sid:9001024; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA Command Injection body pipe char"; flow:to_server,established; content:"POST"; http_method; content:"ip="; http_client_body; content:"|7c|"; http_client_body; within:60; classtype:web-application-attack; sid:9001025; rev:4;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA Command Injection body semicolon"; flow:to_server,established; content:"POST"; http_method; content:"ip="; http_client_body; content:"|3b|"; http_client_body; within:60; classtype:web-application-attack; sid:9001026; rev:1;)
+
+# ══════════════════════════════════════════════════════════════════
+# DVWA — OWASP A01 Broken Access Control + Brute Force
+# ══════════════════════════════════════════════════════════════════
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA Admin Login Brute Force"; flow:to_server,established; content:"/login.php"; http_uri; content:"POST"; http_method; threshold: type both, track by_src, count 5, seconds 30; classtype:attempted-admin; sid:9001031; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA Security Level Cookie Tamper"; flow:to_server,established; content:"security="; http_cookie; nocase; classtype:policy-violation; sid:9001032; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA IDOR Param Traversal"; flow:to_server,established; content:"../"; http_uri; classtype:web-application-attack; sid:9001033; rev:2;)
+
+# ══════════════════════════════════════════════════════════════════
+# DVWA — OWASP A05 Path Traversal / LFI / RFI
+# ══════════════════════════════════════════════════════════════════
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA LFI etc passwd"; flow:to_server,established; content:"etc/passwd"; nocase; http_uri; classtype:web-application-attack; sid:9001040; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA LFI proc environ"; flow:to_server,established; content:"proc/self/environ"; nocase; http_uri; classtype:web-application-attack; sid:9001043; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA RFI External URL"; flow:to_server,established; content:"page=http"; nocase; http_uri; classtype:web-application-attack; sid:9001042; rev:2;)
+
+# ══════════════════════════════════════════════════════════════════
+# DVWA — OWASP A04 Insecure File Upload
+# ══════════════════════════════════════════════════════════════════
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA PHP Webshell Upload"; flow:to_server,established; content:"<?php"; nocase; http_client_body; classtype:web-application-attack; sid:9001051; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA PHP Eval Webshell POST"; flow:to_server,established; content:"eval("; nocase; http_client_body; content:"base64_decode"; nocase; http_client_body; within:60; classtype:web-application-attack; sid:9001052; rev:2;)
+
+# ══════════════════════════════════════════════════════════════════
+# DVWA — OWASP A10 SSRF
+# ══════════════════════════════════════════════════════════════════
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA SSRF AWS Metadata"; flow:to_server,established; content:"169.254.169.254"; http_uri; classtype:web-application-attack; sid:9001060; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA SSRF localhost"; flow:to_server,established; pcre:"/url=(http:\/\/|https:\/\/)(127\.0\.0\.1|localhost|0\.0\.0\.0)/iU"; classtype:web-application-attack; sid:9001061; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC DVWA CSRF Endpoint"; flow:to_server,established; content:"/vulnerabilities/csrf"; nocase; http_uri; content:"POST"; http_method; classtype:web-application-attack; sid:9001062; rev:2;)
+
+# ══════════════════════════════════════════════════════════════════
+# EVASION — Base64, Double-Encoding, Obfuscation
+# ══════════════════════════════════════════════════════════════════
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION Base64 Pipe Bash URI"; flow:to_server,established; content:"base64"; nocase; http_uri; content:"bash"; nocase; http_uri; within:60; classtype:web-application-attack; sid:9002001; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION PHP eval base64_decode POST"; flow:to_server,established; content:"eval(base64_decode"; nocase; http_client_body; classtype:web-application-attack; sid:9002003; rev:2;)
+alert http any any -> $HOME_NET any  (msg:"SOC EVASION PHP eval base64_decode URI"; flow:to_server,established; content:"eval(base64_decode"; nocase; http_uri; classtype:web-application-attack; sid:9002004; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION Double URL Encoded Quote"; flow:to_server,established; content:"%2527"; nocase; http_uri; classtype:web-application-attack; sid:9002010; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION Double Encoded LT"; flow:to_server,established; content:"%253C"; nocase; http_uri; classtype:web-application-attack; sid:9002011; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION SQLi Comment Obfuscation"; flow:to_server,established; content:"/**/"; http_uri; classtype:web-application-attack; sid:9002030; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION SQL inline comment UNION"; flow:to_server,established; content:"un/**/ion"; nocase; http_uri; classtype:web-application-attack; sid:9002031; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION UNION+SELECT Whitespace Bypass"; flow:to_server,established; content:"union+select"; nocase; http_uri; classtype:web-application-attack; sid:9002032; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION Mixed Case SQLi"; flow:to_server,established; pcre:"/(UnIoN|sElEcT|iNsErT|dRoP)/U"; classtype:web-application-attack; sid:9002040; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION SQLi HEX Encoded"; flow:to_server,established; content:"0x"; http_uri; content:"SELECT"; nocase; http_uri; within:60; classtype:web-application-attack; sid:9002041; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION Burp Suite Scanner"; flow:to_server,established; content:"Burp"; http_user_agent; classtype:attempted-recon; sid:9002060; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION OWASP ZAP Scanner"; flow:to_server,established; content:"OWASP ZAP"; http_user_agent; classtype:attempted-recon; sid:9002061; rev:2;)
+alert http any any -> $HOME_NET 80 (msg:"SOC EVASION Nikto Scanner"; flow:to_server,established; content:"Nikto"; http_user_agent; classtype:attempted-recon; sid:9002063; rev:2;)
+
+# ══════════════════════════════════════════════════════════════════
+
+# ── SSH Brute Force Detection ─────────────────────────────────
+alert tcp $EXTERNAL_NET any -> $HOME_NET 22 (msg:"ET SCAN SSH Brute Force Attempt"; flow:to_server; threshold: type both, track by_src, count 5, seconds 60; classtype:attempted-admin; sid:9000001; rev:1;)
+
+# ── Port Scanning ─────────────────────────────────────────────
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (msg:"ET SCAN Port Scan Detected"; flags:S; threshold: type threshold, track by_src, count 20, seconds 5; classtype:attempted-recon; sid:9000002; rev:1;)
+
+# ── Nmap OS fingerprint / SYN scan ───────────────────────────
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (msg:"ET SCAN NMAP SYN Scan"; flags:S,12; classtype:attempted-recon; sid:9000003; rev:1;)
+
+# ── Reverse shell over HTTP ───────────────────────────────────
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"ET MALWARE Possible Reverse Shell via HTTP"; content:"cmd.exe"; http_uri; nocase; classtype:trojan-activity; sid:9000004; rev:1;)
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"ET MALWARE Bash in HTTP URI"; content:"/bin/bash"; http_uri; nocase; classtype:trojan-activity; sid:9000005; rev:1;)
+
+# ── CVE Exploitation Attempts ────────────────────────────────
+alert http any any -> $HOME_NET any (msg:"ET EXPLOIT Log4Shell CVE-2021-44228 Attempt"; content:"${jndi:"; nocase; classtype:attempted-user; sid:9000006; rev:1;)
+alert http any any -> $HOME_NET any (msg:"ET EXPLOIT Spring4Shell CVE-2022-22965"; content:"class.module.classLoader"; http_uri; classtype:attempted-user; sid:9000007; rev:1;)
+
+# ── Credential Stuffing / Auth Brute Force ────────────────────
+alert http $EXTERNAL_NET any -> $HOME_NET $HTTP_PORTS (msg:"ET SCAN HTTP Auth Brute Force"; content:"Authorization: Basic"; http_header; threshold: type both, track by_src, count 10, seconds 60; classtype:attempted-admin; sid:9000008; rev:1;)
+
+# ── Evasion Techniques ────────────────────────────────────────
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (msg:"ET EVASION TCP Fragmentation Evasion"; fragbits:M+; classtype:policy-violation; sid:9000009; rev:1;)
+alert http any any -> $HOME_NET any (msg:"ET EVASION HTTP Header Evasion Double Encoding"; content:"%25"; http_uri; classtype:policy-violation; sid:9000010; rev:1;)
+
+# ── Data Exfiltration patterns ────────────────────────────────
+alert dns $HOME_NET any -> any 53 (msg:"ET DNS Exfiltration Suspected Long DNS Query"; content:"|00 01 00 00|"; offset:4; depth:4; byte_test:1,>,50,12,relative; classtype:policy-violation; sid:9000011; rev:1;)
+
+# ── Malicious User Agents ─────────────────────────────────────
+alert http any any -> $HOME_NET any (msg:"ET SCAN Nikto Web Scanner"; content:"Nikto"; http_user_agent; classtype:attempted-recon; sid:9000012; rev:1;)
+alert http any any -> $HOME_NET any (msg:"ET SCAN sqlmap SQL Injection Scanner"; content:"sqlmap"; http_user_agent; nocase; classtype:attempted-recon; sid:9000013; rev:1;)
+alert http any any -> $HOME_NET any (msg:"ET SCAN Hydra Brute Force Tool"; content:"Hydra"; http_user_agent; classtype:attempted-admin; sid:9000014; rev:1;)
