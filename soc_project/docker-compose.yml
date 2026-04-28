@@ -1,0 +1,412 @@
+services:
+
+  tetragon:
+    image: quay.io/cilium/tetragon:v1.1.0
+    container_name: tetragon
+    pid: "host"
+    privileged: true
+    networks:
+      - soc-net
+    volumes:
+      - /sys/kernel/debug:/sys/kernel/debug:rw
+      - /sys/kernel/tracing:/sys/kernel/tracing:rw
+      - /sys/fs/bpf:/sys/fs/bpf:rw
+      - /lib/modules:/lib/modules:ro
+      - /proc:/proc:ro
+      - ./logs:/var/run/tetragon
+      - ./tetragon-policies:/etc/tetragon/tetragon.tp.d
+    command:
+      - --export-filename=/var/run/tetragon/tetragon.log
+      - --export-file-max-size-mb=100
+      - --export-file-rotation-interval=1h
+      - --tracing-policy-dir=/etc/tetragon/tetragon.tp.d
+      - --disable-kprobe-multi
+    restart: unless-stopped
+
+  suricata:
+    image: jasonish/suricata:latest
+    container_name: suricata
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_NICE
+    volumes:
+      - ./suricata/suricata.yaml:/tmp/suricata-custom.yaml:ro
+      - ./suricata/suricata.rules:/tmp/suricata-custom.rules:ro
+      - ./logs/suricata:/var/log/suricata
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "[Suricata] Starting on soc-br0..."
+        cp /tmp/suricata-custom.yaml /etc/suricata/suricata.yaml
+        mkdir -p /var/lib/suricata/rules
+        cp /tmp/suricata-custom.rules /var/lib/suricata/rules/suricata.rules
+        exec suricata -c /etc/suricata/suricata.yaml --af-packet=soc-br0 -l /var/log/suricata
+    restart: unless-stopped
+
+  victorialogs:
+    image: grafana/loki:3.3.2
+    container_name: victorialogs
+    networks:
+      - soc-net
+    ports:
+      - "9428:9428"
+    volumes:
+      - victorialogs-data:/loki
+      - ./loki:/etc/loki:ro
+    command:
+      - -config.file=/etc/loki/loki-config.yaml
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9428/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.101.0
+    container_name: victoriametrics
+    networks:
+      - soc-net
+    ports:
+      - "8428:8428"
+    volumes:
+      - victoriametrics-data:/victoria-metrics-data
+      - ./victoriametrics-scrape.yaml:/scrape.yaml:ro
+    command:
+      - -storageDataPath=/victoria-metrics-data
+      - -memory.allowedPercent=25
+      - -retentionPeriod=30d
+      - -httpListenAddr=:8428
+      - -selfScrapeInterval=10s
+      - -promscrape.config=/scrape.yaml
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8428/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  benthos:
+    image: jeffail/benthos:latest
+    container_name: benthos
+    user: root
+    networks:
+      - soc-net
+    ports:
+      - "4195:4195"
+    volumes:
+      - ./benthos/config.yaml:/benthos.yaml:ro
+      - ./logs:/var/run/tetragon:ro
+      - ./logs/suricata:/var/log/suricata:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "[Benthos] Waiting for log files..."
+        until [ -f /var/run/tetragon/tetragon.log ]; do echo "  waiting tetragon..."; sleep 3; done
+        until [ -f /var/log/suricata/eve.json ];     do echo "  waiting suricata..."; sleep 3; done
+        echo "[Benthos] Starting: tetragon + suricata tail"
+        tail -qn 0 -F /var/run/tetragon/tetragon.log /var/log/suricata/eve.json | exec /benthos -c /benthos.yaml
+    depends_on:
+      victorialogs:
+        condition: service_healthy
+      victoriametrics:
+        condition: service_healthy
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana-oss:10.4.2
+    container_name: grafana
+    networks:
+      - soc-net
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=victoriametrics-logs-datasource
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-minisoc2026}
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_PATHS_PLUGINS=/var/lib/grafana/plugins
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_FEATURE_TOGGLES_ENABLE=ngalert
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./grafana/plugins:/var/lib/grafana/plugins
+    depends_on:
+      victorialogs:
+        condition: service_healthy
+      victoriametrics:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── DVWA (Damn Vulnerable Web Application) ─────────────────────
+  dvwa-db:
+    image: mysql:8.0
+    container_name: dvwa-db
+    networks:
+      - soc-net
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DVWA_ROOT_PASSWORD:-dvwa_root_2026}
+      MYSQL_DATABASE: dvwa
+      MYSQL_USER: dvwa
+      MYSQL_PASSWORD: ${DVWA_PASSWORD:-dvwa_pass_2026}
+    volumes:
+      - dvwa-db-data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "dvwa", "--password=${DVWA_PASSWORD:-dvwa_pass_2026}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  dvwa:
+    image: ghcr.io/digininja/dvwa:latest
+    container_name: dvwa
+    networks:
+      - soc-net
+    ports:
+      - "8080:80"
+    environment:
+      DB_SERVER: dvwa-db
+      DB_DATABASE: dvwa
+      DB_USER: dvwa
+      DB_PASSWORD: ${DVWA_PASSWORD:-dvwa_pass_2026}
+      DB_PORT: "3306"
+      RECAPTCHA_PRIV_KEY: ""
+      RECAPTCHA_PUB_KEY: ""
+      SECURITY_LEVEL: low
+      PHPIDS_ENABLED: "0"
+    depends_on:
+      dvwa-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── ML Engine (SOC AI — CVE/CWE/OWASP/NIST enrichment) ────────
+  ml-engine:
+    build:
+      context: ./soc-dashboard
+      dockerfile: Dockerfile
+    image: soc-ml-engine:latest
+    container_name: ml-engine
+    networks:
+      - soc-net
+    ports:
+      - "8000:8000"
+    environment:
+      SHUFFLE_API_KEY: ${SHUFFLE_DEFAULT_APIKEY:-shufflesocapikey2026abc}
+      SHUFFLE_WEBHOOK_URL: ${SHUFFLE_WEBHOOK_A03:-""}
+      SHUFFLE_WEBHOOK_A01: ${SHUFFLE_WEBHOOK_A01:-""}
+      SHUFFLE_WEBHOOK_A02: ${SHUFFLE_WEBHOOK_A02:-""}
+      SHUFFLE_WEBHOOK_A03: ${SHUFFLE_WEBHOOK_A03:-""}
+      SHUFFLE_WEBHOOK_A04: ${SHUFFLE_WEBHOOK_A04:-""}
+      SHUFFLE_WEBHOOK_A05: ${SHUFFLE_WEBHOOK_A05:-""}
+      SHUFFLE_WEBHOOK_A06: ${SHUFFLE_WEBHOOK_A06:-""}
+      SHUFFLE_WEBHOOK_A07: ${SHUFFLE_WEBHOOK_A07:-""}
+      SHUFFLE_WEBHOOK_A08: ${SHUFFLE_WEBHOOK_A08:-""}
+      SHUFFLE_WEBHOOK_A09: ${SHUFFLE_WEBHOOK_A09:-""}
+      SHUFFLE_WEBHOOK_A10: ${SHUFFLE_WEBHOOK_A10:-""}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── MISP Threat Intelligence ──────────────────────────────────
+  misp-db:
+    image: mysql:8.0
+    container_name: misp-db
+    networks:
+      - soc-net
+    environment:
+      MYSQL_ROOT_PASSWORD: misproot2026
+      MYSQL_DATABASE: misp
+      MYSQL_USER: misp
+      MYSQL_PASSWORD: mispdb2026
+    volumes:
+      - misp-db-data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "misp", "--password=mispdb2026"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  misp-redis:
+    image: redis:7-alpine
+    container_name: misp-redis
+    networks:
+      - soc-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  misp:
+    image: ghcr.io/misp/misp-docker/misp-core:latest
+    container_name: misp
+    networks:
+      - soc-net
+    depends_on:
+      misp-db:
+        condition: service_healthy
+      misp-redis:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+    environment:
+      MISP_ADMIN_EMAIL: admin@misp.local
+      MISP_ADMIN_PASSPHRASE: Admin1234!
+      MISP_BASEURL: http://localhost:8081
+      MYSQL_HOST: misp-db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: misp
+      MYSQL_USER: misp
+      MYSQL_PASSWORD: mispdb2026
+      REDIS_HOST: misp-redis
+      PHP_SESSIONS_IN_REDIS: "true"
+    volumes:
+      - misp-data:/var/www/MISP/app/files
+    restart: unless-stopped
+
+  misp-exporter:
+    build:
+      context: ./misp-exporter
+      dockerfile: Dockerfile
+    image: soc-misp-exporter:latest
+    container_name: misp-exporter
+    networks:
+      - soc-net
+    depends_on:
+      misp-db:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: misp-db
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: misp
+      MYSQL_USER: misp
+      MYSQL_PASSWORD: mispdb2026
+      PORT: "9419"
+    restart: unless-stopped
+
+  # ── Shuffle Automation (SOAR) ───────────────────────────────────
+  shuffle-db:
+    image: opensearchproject/opensearch:2.12.0
+    container_name: shuffle-db
+    networks:
+      soc-net:
+        aliases:
+          - shuffle-opensearch
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx1g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - shuffle-db-data:/usr/share/opensearch/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  shuffle-backend:
+    image: frikky/shuffle-backend:latest
+    container_name: shuffle-backend
+    networks:
+      - soc-net
+    depends_on:
+      shuffle-db:
+        condition: service_healthy
+    ports:
+      - "5001:5001"
+    environment:
+      OPENSEARCH_URL: http://shuffle-opensearch:9200
+      SHUFFLE_OPENSEARCH_URL: http://shuffle-opensearch:9200
+      BASE_URL: http://shuffle-backend:5001
+      SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
+      SHUFFLE_FILE_LOCATION: /shuffle-files
+      ORG_ID: Shuffle
+      SHUFFLE_DEFAULT_USERNAME: admin
+      SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD:-Admin1234!}
+      SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY:-shufflesocapikey2026abc}
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - shuffle-apps:/shuffle-apps
+      - shuffle-files:/shuffle-files
+    restart: unless-stopped
+
+  shuffle-frontend:
+    image: frikky/shuffle-frontend:latest
+    container_name: shuffle-frontend
+    networks:
+      - soc-net
+    depends_on:
+      - shuffle-backend
+    ports:
+      - "3001:80"
+    environment:
+      BACKEND_HOSTNAME: shuffle-backend
+      BACKEND_PORT: "5001"
+    restart: unless-stopped
+
+  shuffle-exporter:
+    build:
+      context: ./shuffle-exporter
+      dockerfile: Dockerfile
+    image: soc-shuffle-exporter:latest
+    container_name: shuffle-exporter
+    networks:
+      - soc-net
+    depends_on:
+      - shuffle-backend
+    environment:
+      SHUFFLE_HOST: shuffle-backend
+      SHUFFLE_PORT: "5001"
+      SHUFFLE_API_KEY: ${SHUFFLE_DEFAULT_APIKEY:-shufflesocapikey2026abc}
+      PORT: "9420"
+    restart: unless-stopped
+
+networks:
+  soc-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: soc-br0
+
+volumes:
+  victorialogs-data:
+  victoriametrics-data:
+  grafana-data:
+  misp-db-data:
+  misp-data:
+  shuffle-db-data:
+  shuffle-apps:
+  shuffle-files:
+  dvwa-db-data:
