@@ -1,0 +1,49 @@
+# ============================================================
+#  SOC_Local .gitignore
+#  Tujuan: jaga repo tetap ramping. Checkpoint hanya menangkap
+#  source/config/script project, BUKAN data runtime/model besar.
+# ============================================================
+
+# --- Secrets / env ---
+.env
+*.env
+!*.env.example
+*.key
+*.pem
+secrets/
+
+# --- Python venv ---
+soc_project/.venv/
+**/.venv/
+__pycache__/
+*.pyc
+
+# --- Data runtime & log besar (15GB+) ---
+soc_project/logs/
+**/logs/
+*.log
+
+# --- Archive / artefak besar ---
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# --- Model AI chatbot (23GB, di-version terpisah, bukan via git ini) ---
+Model_Chatbot/
+
+# --- Dashboard adalah repo git terpisah (github.com/aryarefman/soc-dashboard).
+#     Di-checkpoint lewat git-nya sendiri oleh scripts/checkpoint.sh,
+#     bukan disematkan sebagai submodule di repo ini. ---
+soc_project/soc-dashboard/
+
+# --- Folder backup .git yang dibuat saat cleanup ---
+/SOC_Local_git-backup_*/
+
+# --- OS / editor junk ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/

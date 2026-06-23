@@ -150,7 +150,7 @@ for line in sys.stdin:
         if data.get('event_type') == 'alert':
             timestamp = data.get('timestamp', '')[:19].replace('T', ' ')
             src_ip = data.get('src_ip', '')
-            dest_ip = data.get('dest_ip', '')
+            dest_ip = data.get('dest_ip', '')s
             signature = data.get('alert', {}).get('signature', 'Unknown Alert')
             severity = data.get('alert', {}).get('severity', 0)
 
