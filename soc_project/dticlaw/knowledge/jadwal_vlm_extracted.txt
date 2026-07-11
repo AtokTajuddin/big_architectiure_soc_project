@@ -1,0 +1,58 @@
+# Jadwal Perkuliahan DTI — diekstrak otomatis oleh qwen2.5vl dari gambar jadwal (bukan transkrip manual).
+
+- Hari RABU / WEDNESDAY, pukul 07.30-10.00, Ruang TW2 - 702 [48]: Security Operations Center C (3 SKS) Semester 4 | HS, DJ
+- Hari RABU / WEDNESDAY, pukul 07.30-10.00, Ruang TW2 - 703 [56]: Operasional Pengembang A (3 SKS) Semester 6 | FD, DJ
+- Hari RABU / WEDNESDAY, pukul 07.30-10.00, Ruang TW2 - 704 [48]: Interaksi Manusia dan Komputer B (3 SKS) Semester 2 | IZ
+- Hari RABU / WEDNESDAY, pukul 07.30-10.00, Ruang SKPB (Tower 1): Kalkulus 1 (3 SKS) MENGULANG (07.00-08.40)
+- Hari RABU / WEDNESDAY, pukul 10.00-12.30, Ruang TW2 - 702 [48]: Teknologi Komputasi Awan C (3 SKS) Semester 4 | HC, FD
+- Hari RABU / WEDNESDAY, pukul 10.00-12.30, Ruang TW2 - 703 [56]: Otomasi Sistem (IoT Lanjut) A (3 SKS) Semester 6 | AI, MH
+- Hari RABU / WEDNESDAY, pukul 10.00-12.30, Ruang TW2 - 704 [48]: Manajemen Insiden Keamanan Siber A (3 SKS) Semester 4 | HS, TF
+- Hari RABU / WEDNESDAY, pukul 10.00-12.30, Ruang TW2 - 705 [48]: Interaksi Manusia dan Komputer C (3 SKS) Semester 2 | HF
+- Hari RABU / WEDNESDAY, pukul 13.00-15.30, Ruang TW2 - 702 [48]: Kecerdasan Artifisial dan Machine Learning C (4 SKS) Semester 4 | RW, IZ
+- Hari RABU / WEDNESDAY, pukul 13.00-15.30, Ruang TW2 - 705 [48]: Teknologi Komputasi Awan A (1 SKS) Semester 4 | HC, FD
+- Hari KAMIS / THURSDAY, pukul 07.30-10.00, Ruang TW2 - 702 [48]: Security Operations Center A (3 SKS) Semester 4 | HS, DJ
+- Hari KAMIS / THURSDAY, pukul 07.30-10.00, Ruang TW2 - 703 [56]: Teknologi Komputasi Awan B (3 SKS) Semester 4 | HC, FD
+- Hari KAMIS / THURSDAY, pukul 07.30-10.00, Ruang TW2 - 704 [48]: Arsitektur Enterprise C (3 SKS) Semester 2 | AI
+- Hari KAMIS / THURSDAY, pukul 07.30-10.00, Ruang TW2 - 705 [48]: Pengembangan Sistem/Aplikasi (Capstone Project) 2022 A Semester 6 | RR, RW
+- Hari KAMIS / THURSDAY, pukul 07.30-10.00, Ruang Lab 902: Kecerdasan Artifisial dan Machine Learning C (1 SKS) Semester 4 | RW, IZ
+- Hari KAMIS / THURSDAY, pukul 10.00-12.30, Ruang TW2 - 702 [48]: Big Data dan Data Lakehouse A (3 SKS) Semester 4 | FD
+- Hari KAMIS / THURSDAY, pukul 10.00-12.30, Ruang TW2 - 703 [56]: Manajemen Insiden Keamanan Siber B (3 SKS) Semester 4 | HS, TF
+- Hari KAMIS / THURSDAY, pukul 11.00-12.30, Ruang SKPB (Tower 1): KALKULUS 2 (3 SKS) Semester 2
+- Hari KAMIS / THURSDAY, pukul 11.00-12.30, Ruang SKPB (Tower 1): Kalkulus 2 (3 SKS) MENGULANG
+- Hari KAMIS / THURSDAY, pukul 13.00-15.30, Ruang Lab 902: Teknologi Komputasi Awan B (1 SKS) Semester 4 | HC, FD
+- Hari KAMIS / THURSDAY, pukul 13.00-13.50 KOSONG, Ruang SKPB (Tower 1): AGAMA ISLAM (2 SKS) Semester 6 (13.30-15.10)
+- Hari KAMIS / THURSDAY, pukul 13.00-13.50 KOSONG, Ruang SKPB (Tower 1): Kalkulus 2 (3 SKS) MENGULANG (13.30-15.10)
+- Hari KAMIS / THURSDAY, pukul 15.30-17.10, Ruang SKPB (Tower 1): KEWARGANEGARAAN (2 SKS) Semester 6
+- Hari KAMIS / THURSDAY, pukul 15.30-17.10, Ruang SKPB (Tower 1): Fisika Dasar (3 SKS) MENGULANG
+- Hari JUMAT / FRIDAY, pukul 07.30-10.00, Ruang TW2 - 703 [56]: Struktur Data dan Pemograman Berorientasi Objek B (1 SKS) Semester 2 | HF
+- Hari JUMAT / FRIDAY, pukul 07.30-10.00, Ruang TW2 - 704 [48]: Teknologi Komputasi Awan C (1 SKS) Semester 4 | HC, FD
+- Hari JUMAT / FRIDAY, pukul 07.30-10.00, Ruang TW2 - 705 [48]: Sistem Operasi A (1 SKS) Semester 2 | HG, MH
+- Hari JUMAT / FRIDAY, pukul 10.00-12.30, Ruang TW2 - 703 [56]: Struktur Data dan Pemograman Berorientasi Objek A (1 SKS) Sem 2 | HF
+- Hari JUMAT / FRIDAY, pukul 10.00-12.30, Ruang TW2 - 704 [48]: Struktur Data dan Pemograman Berorientasi Objek C (1 SKS) Sem 2 | AT
+- Hari JUMAT / FRIDAY, pukul 13.00-15.30, Ruang TW2 - 703 [56]: Teknologi Blockchain A (3 SKS) (PENGAYAAN) Semester 6 | HF
+- Hari SENIN / MONDAY, pukul 07.30-10.00, Ruang : Arsitektur Enterprise B (3 SKS) Semester 2 | KG
+- Hari SENIN / MONDAY, pukul 07.30-10.00, Ruang ?: Integrasi Sistem C (3 SKS) Semester 4 | RR, GS
+- Hari SENIN / MONDAY, pukul 07.30-10.00, Ruang ?: Interaksi Manusia dan Komputer A (3 SKS) Semester 4, 6 | IZ
+- Hari SENIN / MONDAY, pukul 07.30-09.10, Ruang ?: Penulisan Ilmiah A (2 SKS) Semester 6 | RW
+- Hari SENIN / MONDAY, pukul 07.30-09.10, Ruang Lab 902: Penulisan Ilmiah B (2 SKS) Semester 6 | HC
+- Hari SENIN / MONDAY, pukul 07.30-09.10, Ruang : Kalkulus 1 (3 SKS) MENGULANG (07.00-08.40)
+- Hari SENIN / MONDAY, pukul 10.00-12.30, Ruang : Arsitektur Enterprise A (3 SKS) Semester 2 | KG
+- Hari SENIN / MONDAY, pukul 10.00-12.30, Ruang ?: Integrasi Sistem B (3 SKS) Semester 4 | RR, GS
+- Hari SENIN / MONDAY, pukul 10.00-12.30, Ruang ?: Teknologi Komputasi Awan A (3 SKS) Semester 4 | HC, FD
+- Hari SENIN / MONDAY, pukul 10.00-11.00 KOSONG, Ruang ?: Struktur Data dan Pemograman Berorientasi Objek B (2 SKS) Semester 2 | HF
+- Hari SENIN / MONDAY, pukul 13.00-13.50 KOSONG, Ruang : Struktur Data dan Pemograman Berorientasi Objek C (2 SKS) Semester 2 | AT
+- Hari SENIN / MONDAY, pukul 13.00-15.30, Ruang ?: Kecerdasan Artifisial dan Machine Learning B (4 SKS) Semester 4 | RW, IZ
+- Hari SENIN / MONDAY, pukul 13.00-15.30, Ruang ?: Big Data dan Data Lakehouse C (3 SKS) Semester 4 | FD
+- Hari SENIN / MONDAY, pukul 13.00-13.50 KOSONG, Ruang ?: Struktur Data dan Pemograman Berorientasi Objek A (2 SKS) Semester 2 | HF
+- Hari SELASA / TUESDAY, pukul 07.30-10.00, Ruang TW2 - 702 [48]: Integrasi Sistem A (3 SKS) Semester 4 | RR, GS
+- Hari SELASA / TUESDAY, pukul 07.30-10.00, Ruang TW2 - 704 [48]: Manajemen Insiden Keamanan Siber C (3 SKS) Semester 4 | HS, DJ
+- Hari SELASA / TUESDAY, pukul 07.30-10.00, Ruang TW2 - 705 [48]: Big Data dan Data Lakehouse B (3 SKS) Semester 4 | FD
+- Hari SELASA / TUESDAY, pukul 10.00-12.30, Ruang TW2 - 702 [48]: Kecerdasan Artifisial dan Machine Learning A (4 SKS) Semester 4 | IZ, DS
+- Hari SELASA / TUESDAY, pukul 10.00-12.30, Ruang TW2 - 703 [56]: Pengembangan Sistem/Aplikasi (Capstone Project) 2022 B Semester 6 | RR, RW
+- Hari SELASA / TUESDAY, pukul 10.00-12.30, Ruang TW2 - 704 [48]: Security Operations Center B (3 SKS) Semester 4 | HS, DJ
+- Hari SELASA / TUESDAY, pukul 11.00-12.30, Ruang SKPB (Tower 1): Kalkulus 2 (3 SKS) Semester 2
+- Hari SELASA / TUESDAY, pukul 11.00-12.30, Ruang SKPB (Tower 1): Kalkulus 2 (3 SKS) MENGULANG
+- Hari SELASA / TUESDAY, pukul 13.00-15.30, Ruang TW2 - 705 [48]: Kecerdasan Artifisial dan Machine Learning A (1 SKS) Semester 4 | IZ, DS
+- Hari SELASA / TUESDAY, pukul 13.00-15.30, Ruang Lab 902: Kecerdasan Artifisial dan Machine Learning B (1 SKS) Semester 4 | RW, IZ
+- Hari SELASA / TUESDAY, pukul 13.00-14.40, Ruang SKPB (Tower 1): Kalkulus 2 (3 SKS) MENGULANG (13.30-15.10)
+- Hari SELASA / TUESDAY, pukul 15.30-16.20, Ruang SKPB (Tower 1): Fisika Dasar (3 SKS)

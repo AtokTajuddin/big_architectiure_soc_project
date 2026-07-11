@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Savior agent 🛡️</title>
+    <style>
+      :root {
+        --bg: #0d1117; --panel: #161b22; --panel-2: #1c2333; --border: #2a3140;
+        --text: #e6edf3; --muted: #8b949e; --accent: #ff6b4a; --accent-dim: #b84a32;
+        --user: #1f6feb; --ok: #3fb950;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg); color: var(--text); height: 100dvh; }
+      .app { display: flex; height: 100dvh; }
+
+      /* Sidebar riwayat */
+      .sidebar { width: 260px; flex-shrink: 0; background: var(--panel); border-right: 1px solid var(--border);
+        display: flex; flex-direction: column; padding: 12px; gap: 10px; }
+      .sidebar .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; padding: 4px 2px; }
+      .sidebar .brand .logo { font-size: 22px; }
+      #newChat { background: var(--accent); color: #fff; border: none; padding: 9px; border-radius: 9px;
+        font-size: 13px; font-weight: 600; cursor: pointer; }
+      #newChat:hover { background: var(--accent-dim); }
+      .side-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+      #sessions { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+      .sess { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid transparent; }
+      .sess:hover { background: var(--panel-2); }
+      .sess.active { background: var(--panel-2); border-color: var(--accent); }
+      .sess .meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+      .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+      header { display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+        border-bottom: 1px solid var(--border); background: var(--panel); }
+      header .title { font-weight: 700; font-size: 17px; }
+      header .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+      header .status { margin-left: auto; display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
+      .dot { width: 9px; height: 9px; border-radius: 50%; background: #555; transition: background .3s; }
+      .dot.on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+      .dot.busy { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 1s infinite; }
+      @keyframes pulse { 50% { opacity: .4; } }
+
+      #chat { flex: 1; overflow-y: auto; padding: 24px clamp(12px, 4vw, 80px); display: flex; flex-direction: column; gap: 18px; }
+      .msg { display: flex; gap: 12px; max-width: 860px; width: 100%; margin: 0 auto; }
+      .msg .avatar { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: grid; place-items: center; font-size: 18px; }
+      .msg.user .avatar { background: var(--user); }
+      .msg.bot .avatar { background: linear-gradient(135deg, var(--accent), var(--accent-dim)); }
+      .msg .body { padding-top: 4px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; }
+      .msg .who { font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+      .filelink { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; background: var(--panel-2);
+        border: 1px solid var(--accent); color: var(--accent); padding: 8px 12px; border-radius: 8px;
+        font-size: 13px; font-weight: 600; text-decoration: none; }
+      .filelink:hover { background: var(--accent); color: #fff; }
+      .welcome { text-align: center; color: var(--muted); margin: auto; max-width: 460px; }
+      .welcome .big { font-size: 48px; margin-bottom: 12px; }
+      .welcome h1 { font-size: 20px; color: var(--text); margin-bottom: 8px; }
+      .welcome p { font-size: 14px; line-height: 1.6; }
+      .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+      .chip { background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+        padding: 8px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; transition: .15s; }
+      .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+      footer { padding: 14px clamp(12px, 4vw, 80px) 20px; border-top: 1px solid var(--border); background: var(--panel); }
+      .composer { max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: flex-end;
+        background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 8px 8px 8px 14px; }
+      .composer:focus-within { border-color: var(--accent); }
+      #input { flex: 1; background: transparent; border: none; color: var(--text); resize: none;
+        font-family: inherit; font-size: 15px; line-height: 1.5; max-height: 180px; outline: none; padding: 6px 0; }
+      #send { width: 38px; height: 38px; border-radius: 10px; border: none; cursor: pointer; flex-shrink: 0;
+        background: var(--accent); color: white; font-size: 17px; display: grid; place-items: center; transition: .15s; }
+      #send:disabled { background: #3a3a3a; cursor: not-allowed; }
+      .hint { max-width: 860px; margin: 8px auto 0; font-size: 11px; color: var(--muted); text-align: center; }
+      .typing span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-right: 4px; animation: blink 1.2s infinite; }
+      .typing span:nth-child(2) { animation-delay: .2s; }
+      .typing span:nth-child(3) { animation-delay: .4s; }
+      @keyframes blink { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand"><span class="logo">🛡️</span> Savior agent</div>
+        <button id="newChat">+ Sesi baru</button>
+        <div class="side-title">Riwayat</div>
+        <div id="sessions"></div>
+      </aside>
+
+      <div class="main">
+        <header>
+          <div>
+            <div class="title">Savior agent</div>
+            <div class="sub">SOC Assistant · savior_v2 (Llama-Primus)</div>
+          </div>
+          <div class="status">
+            <span id="statusText">menghubungkan…</span>
+            <span class="dot" id="dot"></span>
+          </div>
+        </header>
+
+        <div id="chat"></div>
+
+        <footer>
+          <div class="composer">
+            <textarea id="input" rows="1" placeholder="Tanya Savior agent… tempel alert Wazuh untuk ditriase (Enter kirim, Shift+Enter baris baru)"></textarea>
+            <button id="send" title="Kirim">➤</button>
+          </div>
+          <div class="hint">Savior agent · savior_v2 (Llama-Primus, GPU) · triase alert Wazuh TP/FP &amp; investigasi SOC</div>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      const chat = document.getElementById("chat");
+      const input = document.getElementById("input");
+      const sendBtn = document.getElementById("send");
+      const dot = document.getElementById("dot");
+      const statusText = document.getElementById("statusText");
+      const sessionsEl = document.getElementById("sessions");
+
+      let sessionKey = localStorage.getItem("dticlaw.session") || newSession();
+      let busy = false;
+
+      function newSession() {
+        const k = "web-" + Date.now().toString(36);
+        localStorage.setItem("dticlaw.session", k);
+        return k;
+      }
+      function setStatus(state, text) {
+        dot.className = "dot" + (state === "on" ? " on" : state === "busy" ? " busy" : "");
+        statusText.textContent = text;
+      }
+      async function ping() {
+        try { const r = await fetch("/healthz"); setStatus(r.ok ? "on" : "", r.ok ? "online" : "gateway mati"); }
+        catch { setStatus("", "offline"); }
+      }
+      ping(); setInterval(ping, 15000);
+
+      function showWelcome() {
+        chat.innerHTML = `<div class="welcome" id="welcome"><div class="big">🛡️</div>
+          <h1>Savior agent siap membantu</h1>
+          <p>Pendamping SOC bertenaga savior_v2 (Llama-Primus, GPU). Paham sistem &amp; log Wazuh, menandai mana yang true positive dan mana false positive, serta saran investigasi &amp; tuning rule.</p>
+          <div class="chips">
+            <div class="chip" data-q="Tempel alert Wazuh ini lalu tentukan TP/FP: rule.id 5710 level 5 sshd non-existent user dari 192.168.1.50 saat maintenance window.">🛡️ Triase alert</div>
+            <div class="chip" data-q="Jelaskan rule.id 5710 di Wazuh dan kenapa sering jadi false positive.">🔎 Analisa rule</div>
+            <div class="chip" data-q="Langkah investigasi untuk brute-force SSH yang terkonfirmasi true positive.">📋 Playbook IR</div>
+          </div></div>`;
+        chat.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", () => send(c.dataset.q)));
+      }
+
+      function renderMsg(who, text, opts = {}) {
+        const w = document.getElementById("welcome"); if (w) w.remove();
+        const wrap = document.createElement("div");
+        wrap.className = "msg " + who;
+        const avatar = document.createElement("div");
+        avatar.className = "avatar"; avatar.textContent = who === "user" ? "🧑" : "🛡️";
+        const body = document.createElement("div"); body.style.flex = "1";
+        const whoEl = document.createElement("div"); whoEl.className = "who"; whoEl.textContent = who === "user" ? "Kamu" : "Savior";
+        const content = document.createElement("div"); content.className = "body";
+        body.appendChild(whoEl); body.appendChild(content);
+        wrap.appendChild(avatar); wrap.appendChild(body);
+        chat.appendChild(wrap);
+        chat.scrollTop = chat.scrollHeight;
+        if (typeof text === "string") content.textContent = text;
+        if (opts.file) addFileLink(content, opts.file);
+        if (Array.isArray(opts.sources) && opts.sources.length) addSources(content, opts.sources);
+        return content;
+      }
+      function addFileLink(el, file) {
+        const a = document.createElement("a");
+        a.className = "filelink"; a.href = "/" + file.replace(/^\/+/, ""); a.download = "";
+        a.textContent = "⬇ Unduh " + file.split("/").pop();
+        el.appendChild(document.createElement("br")); el.appendChild(a);
+      }
+      function addSources(el, sources) {
+        const src = document.createElement("div");
+        src.style.cssText = "margin-top:8px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px";
+        src.textContent = "📚 Sumber: " + sources.join(", ");
+        el.appendChild(src);
+      }
+      function typingIndicator(el) { el.innerHTML = '<span class="typing"><span></span><span></span><span></span></span>'; }
+
+      async function loadSessions() {
+        try {
+          const rows = await (await fetch("/sessions")).json();
+          sessionsEl.innerHTML = "";
+          for (const s of rows) {
+            const d = document.createElement("div");
+            d.className = "sess" + (s.session === sessionKey ? " active" : "");
+            const t = (s.title || "(kosong)").slice(0, 40);
+            d.innerHTML = `<div>${escapeHtml(t)}</div><div class="meta">${s.n} pesan · ${new Date(s.last_ts).toLocaleString("id")}</div>`;
+            d.addEventListener("click", () => selectSession(s.session));
+            sessionsEl.appendChild(d);
+          }
+        } catch {}
+      }
+      function escapeHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+      async function loadHistory(session) {
+        try {
+          const rows = await (await fetch("/history?session=" + encodeURIComponent(session))).json();
+          chat.innerHTML = "";
+          if (!rows.length) { showWelcome(); return; }
+          for (const m of rows) {
+            const sources = m.sources ? JSON.parse(m.sources) : null;
+            renderMsg(m.role === "user" ? "user" : "bot", m.content, { sources, file: m.file });
+          }
+        } catch { showWelcome(); }
+      }
+      function selectSession(session) {
+        sessionKey = session;
+        localStorage.setItem("dticlaw.session", session);
+        loadHistory(session);
+        loadSessions();
+      }
+
+      async function send(text) {
+        if (busy || !text.trim()) return;
+        busy = true; sendBtn.disabled = true;
+        renderMsg("user", text);
+        input.value = ""; input.style.height = "auto";
+        const out = renderMsg("bot"); typingIndicator(out);
+        setStatus("busy", "berpikir…");
+        try {
+          const r = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: text, session: sessionKey }) });
+          const data = await r.json();
+          if (data.reply) {
+            out.textContent = data.reply;
+            if (data.file) addFileLink(out, data.file);
+            if (Array.isArray(data.sources) && data.sources.length) addSources(out, data.sources);
+          } else { out.textContent = "⚠️ " + (data.error || "Tidak ada balasan dari agent."); }
+        } catch (e) { out.textContent = "⚠️ Gagal menghubungi Savior agent: " + e.message; }
+        finally {
+          busy = false; sendBtn.disabled = false; setStatus("on", "online");
+          chat.scrollTop = chat.scrollHeight; input.focus();
+          loadSessions();
+        }
+      }
+
+      sendBtn.addEventListener("click", () => send(input.value));
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input.value); } });
+      input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 180) + "px"; });
+      document.getElementById("newChat").addEventListener("click", () => {
+        sessionKey = newSession(); showWelcome(); loadSessions(); input.focus();
+      });
+
+      // Muat awal: riwayat sesi + isi sesi aktif.
+      loadSessions();
+      loadHistory(sessionKey);
+      input.focus();
+    </script>
+  </body>
+</html>

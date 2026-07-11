@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "fallback": {
+    "emoji": "🧩",
+    "title": "Tool",
+    "label": "Running"
+  },
+  "tools": {}
+}

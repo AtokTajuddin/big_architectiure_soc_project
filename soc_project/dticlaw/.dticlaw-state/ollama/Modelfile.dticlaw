@@ -1,0 +1,8 @@
+# DTIClaw generator — gemma2:9b, konteks diperluas wajar untuk Agentic RAG.
+# num_ctx 12288 → budget prompt OpenClaw ~6144 (isi prompt tetap <=8192 native = kualitas terjaga).
+# KV cache ~4GB (offload VRAM->RAM otomatis, 30GB tersedia). Output dibatasi 2048 token.
+FROM gemma2:9b
+PARAMETER num_ctx 12288
+PARAMETER num_predict 2048
+PARAMETER temperature 0.6
+PARAMETER top_p 0.9

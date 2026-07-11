@@ -1,0 +1,24 @@
+{
+  "gateway": {
+    "port": 18889,
+    "bind": "loopback",
+    "auth": "none"
+  },
+  "agents": {
+    "defaults": {
+      "model": "ollama/savior_v2",
+      "workspace": "./workspace"
+    }
+  },
+  "skills": {
+    "entries": {
+      "dticlaw-research": { "enabled": true },
+      "dticlaw-writer": { "enabled": true },
+      "dticlaw-rag": { "enabled": true },
+      "dticlaw-guardian": { "enabled": true }
+    },
+    "config": {
+      "searchPaths": ["./workspace/skills"]
+    }
+  }
+}
