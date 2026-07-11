@@ -9,11 +9,13 @@ Fokus: baca log **Wazuh**, triase alert **TP / FP / FN**, beri rekomendasi. Jala
 
 ```
 savior_v2 (LoRA→GGUF Q4, Ollama via systemd, GPU RTX 3070)
-   ├──► Savior Monitor :8899  (Docker) — ringkasan SOC otomatis tiap 5 menit  ★
-   ├──► Open WebUI  :3000  (chat persistent + Web Search + Wazuh Grounding anti-halusinasi)
+   ├──► Savior Monitor :8899  (Docker) — triase Wazuh + metrics Grafana tiap 5 menit  ★
+   ├──► Open WebUI  :3030  (chat persistent + Web Search + Wazuh Grounding anti-halusinasi)
    ├──► Savior agent (dticlaw) :3737  (agentic + savior-bridge)
    └──► savior-triage / savior-bridge  (baca Wazuh deterministik)
 
+Grafana :3000 — dashboard "08 – Savior AI Companion" (embed Monitor + Chat)
+   sumber data AI = VictoriaMetrics :8428 + VictoriaLogs :9428 (datasource Grafana)
 Wazuh single-node (docker)  :9200 indexer · :55000 API · :443 dashboard
 Shuffle SOAR (webhook, cloud)  — trigger via savior-bridge (human-in-the-loop)
 ```
@@ -21,8 +23,9 @@ Shuffle SOAR (webhook, cloud)  — trigger via savior-bridge (human-in-the-loop)
 ## ★ Savior Monitor — pendamping SOC otomatis (tiap 5 menit)
 
 Container Docker (`savior-monitor/`, `network_mode: host`) yang tiap 5 menit: tarik alert **NYATA** dari
-Wazuh Indexer → triase savior_v2 (GPU) → sajikan ringkasan ke **dashboard** dan log persistent.
-Deterministik (model hanya menilai data Wazuh asli, **anti-halusinasi**).
+Wazuh Indexer **+ metrics pipeline dari VictoriaMetrics/VictoriaLogs (data yang sama dengan Grafana:
+MISP IOC, Shuffle SOAR, ML engine, volume log)** → triase savior_v2 (GPU) → sajikan ringkasan ke
+**dashboard** dan log persistent. Deterministik (model hanya menilai data asli, **anti-halusinasi**).
 
 - **Dashboard:** http://localhost:8899 (auto-refresh 30s, badge TENANG/PERHATIAN/KRITIS)
 - **API:** `curl http://localhost:8899/api/latest`
@@ -44,7 +47,8 @@ TRUE POSITIVE: menunggu konfirmasi log detail; bila sahih → containment + hunt
 | Layanan | URL / perintah | Kredensial |
 |---|---|---|
 | **Savior Monitor** (ringkasan 5 menit) | http://localhost:8899 | — |
-| Chat (Open WebUI) | http://localhost:3000 | akun yang dibuat saat pertama |
+| **Grafana — dashboard "08 – Savior AI Companion"** | http://localhost:3000/d/mini-soc-savior-v1 | `admin` / `minisoc2026` |
+| **Chat (Open WebUI)** | http://localhost:3030 | akun yang dibuat saat pertama |
 | Wazuh dashboard | https://localhost | `admin` / `SecretPassword` |
 | Wazuh indexer | https://127.0.0.1:9200 | `admin` / `SecretPassword` |
 | Wazuh API | https://127.0.0.1:55000 | `wazuh-wui` / `MyS3cr37P450r.*-` |

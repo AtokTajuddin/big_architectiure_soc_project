@@ -8,6 +8,9 @@ services:
       WAZUH_INDEXER_USER: "admin"
       WAZUH_INDEXER_PASS: "SecretPassword"
       OLLAMA_URL: "http://127.0.0.1:11434"
+      # Data Grafana (datasource yang sama dgn dashboard mini-SOC)
+      VM_URL: "http://127.0.0.1:8428"
+      VL_URL: "http://127.0.0.1:9428"
       SAVIOR_MODEL: "savior_v2"
       INTERVAL_SECONDS: "300"     # ringkasan tiap 5 menit
       MAX_ALERTS: "20"

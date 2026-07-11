@@ -10,6 +10,7 @@ import os
 import ssl
 import threading
 import time
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -18,6 +19,19 @@ WAZUH_URL = os.environ.get("WAZUH_INDEXER_URL", "https://127.0.0.1:9200").rstrip
 WAZUH_USER = os.environ.get("WAZUH_INDEXER_USER", "admin")
 WAZUH_PASS = os.environ.get("WAZUH_INDEXER_PASS", "SecretPassword")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+# Sumber data Grafana: VictoriaMetrics (metrics) + VictoriaLogs (log) — datasource
+# yang sama dengan yang ditampilkan dashboard Grafana mini-SOC.
+VM_URL = os.environ.get("VM_URL", "http://127.0.0.1:8428").rstrip("/")
+VL_URL = os.environ.get("VL_URL", "http://127.0.0.1:9428").rstrip("/")
+# label=promql, dipisah ';' — bisa dioverride via env tanpa rebuild
+VM_QUERIES = os.environ.get("VM_QUERIES", ";".join([
+    "IOC match MISP=sum(misp_ioc_match_total)",
+    "Threat event MISP aktif=sum(misp_events_active)",
+    "Alert diproses Shuffle SOAR=sum(shuffle_alerts_processed_total)",
+    "Eksekusi workflow SOAR gagal=sum(shuffle_action_failures_total)",
+    "Deteksi CVE oleh ML engine=sum(ml_cve_detections_total)",
+    "Indikasi evasion (ML)=sum(ml_evasion_detected_total)",
+]))
 MODEL = os.environ.get("SAVIOR_MODEL", "savior_v2")
 INTERVAL = int(os.environ.get("INTERVAL_SECONDS", "300"))
 MAX_ALERTS = int(os.environ.get("MAX_ALERTS", "20"))
@@ -71,16 +85,59 @@ def wazuh_recent():
     return out, total
 
 
-def triage(alerts):
+def _http_json(url, data=None, headers=None, timeout=15):
+    req = urllib.request.Request(url, data=data, headers=headers or {})
+    with urllib.request.urlopen(req, context=NO_VERIFY, timeout=timeout) as r:
+        return json.load(r)
+
+
+def grafana_context():
+    """Baca data yang sama dengan dashboard Grafana: metrics VictoriaMetrics
+    (MISP/Shuffle/ML) + volume log VictoriaLogs per stream. Tiap query gagal
+    dilewati diam-diam agar monitor tetap jalan walau stack Grafana mati."""
+    lines = []
+    for spec in VM_QUERIES.split(";"):
+        if "=" not in spec:
+            continue
+        label, expr = spec.split("=", 1)
+        try:
+            d = _http_json(f"{VM_URL}/api/v1/query?" +
+                           urllib.parse.urlencode({"query": expr.strip()}))
+            res = d.get("data", {}).get("result", [])
+            val = res[0]["value"][1] if res else "0"
+            lines.append(f"- {label.strip()}: {val}")
+        except Exception:  # noqa: BLE001
+            pass
+    # VictoriaLogs mengembalikan NDJSON (1 objek JSON per baris)
+    try:
+        q = urllib.parse.urlencode(
+            {"query": f"_time:{INTERVAL}s * | stats by (_stream) count() n"})
+        req = urllib.request.Request(f"{VL_URL}/select/logsql/query?{q}")
+        with urllib.request.urlopen(req, timeout=15) as r:
+            for raw in r.read().decode().strip().splitlines()[:8]:
+                if not raw:
+                    continue
+                row = json.loads(raw)
+                lines.append(
+                    f"- Log {row.get('_stream', '?')}: {row.get('n', '?')} baris/interval")
+    except Exception:  # noqa: BLE001
+        pass
+    return "\n".join(lines)
+
+
+def triage(alerts, metrics_ctx=""):
     listing = "\n".join(
         f"{i+1}. rule.id={a['rule_id']} level={a['level']} | {a['desc']} | "
         f"srcip={a['srcip']} groups={a['groups']} | log: {a['full_log']}"
         for i, a in enumerate(alerts)
     )
     assets = f"\nASET DIKENAL (sah): {KNOWN_ASSETS}" if KNOWN_ASSETS else ""
+    grafana = (
+        "\n\nKONTEKS PIPELINE (metrics Grafana/VictoriaMetrics, data nyata):\n" + metrics_ctx
+    ) if metrics_ctx else ""
     prompt = (
         "Kamu Savior, analis SOC. Berikut alert NYATA dari Wazuh dalam 5 menit terakhir "
-        "(JANGAN tambah data di luar ini)." + assets + "\n\n" + listing + "\n\n"
+        "(JANGAN tambah data di luar ini)." + assets + grafana + "\n\n" + listing + "\n\n"
         "Buat RINGKASAN untuk SOC engineer:\n"
         "1) STATUS keseluruhan (TENANG / PERLU PERHATIAN / KRITIS).\n"
         "2) Hitung: berapa kemungkinan TRUE POSITIVE, FALSE POSITIVE, FALSE NEGATIVE.\n"
@@ -105,18 +162,20 @@ def cycle():
         log("ERROR wazuh:", e)
         _store(rec)
         return
+    metrics_ctx = grafana_context()
     if not alerts:
         rec = {"ts": ts, "n": 0, "total": total,
                "summary": "STATUS: TENANG — tidak ada alert baru dalam 5 menit terakhir.",
-               "alerts": []}
+               "metrics": metrics_ctx, "alerts": []}
     else:
         t0 = time.time()
         try:
-            summary = triage(alerts)
+            summary = triage(alerts, metrics_ctx)
         except Exception as e:  # noqa: BLE001
             summary = f"(gagal triase savior_v2: {e})"
         rec = {"ts": ts, "n": len(alerts), "total": total,
-               "summary": summary, "dur": round(time.time() - t0, 1),
+               "summary": summary, "metrics": metrics_ctx,
+               "dur": round(time.time() - t0, 1),
                "alerts": alerts}
         log(f"cycle: {len(alerts)} alert ditriase dalam {rec.get('dur')}s")
     _store(rec)
@@ -153,7 +212,7 @@ pre{{white-space:pre-wrap;word-wrap:break-word;font-family:inherit;line-height:1
 .ok{{background:#13361f;color:#3fb950}} .warn{{background:#3a2a13;color:#ff6b4a}} .err{{background:#3a1313;color:#f85149}}
 </style></head><body>
 <h1>🛡️ Savior Monitor — ringkasan SOC tiap {iv} dtk</h1>
-<div class=sub>Sumber: Wazuh (data nyata) · model savior_v2 (GPU) · auto-refresh 30s</div>
+<div class=sub>Sumber: Wazuh + Grafana/VictoriaMetrics (data nyata) · model savior_v2 (GPU) · auto-refresh 30s</div>
 {cards}
 </body></html>"""
 
@@ -173,7 +232,10 @@ def render():
                 '<span class="badge err">KRITIS</span>' if "KRITIS" in up else
                 '<span class="badge warn">PERHATIAN</span>' if "PERHATIAN" in up else "")
             head = f"<span class=ts>{r.get('ts','')}</span> · {r.get('n',0)} alert {badge}"
-            cards += f'<div class="{cls}">{head}<pre>{_esc(s)}</pre></div>'
+            mx = r.get("metrics", "")
+            mblock = (f'<details><summary class=ts>metrics pipeline (Grafana)</summary>'
+                      f'<pre class=ts>{_esc(mx)}</pre></details>') if mx else ""
+            cards += f'<div class="{cls}">{head}<pre>{_esc(s)}</pre>{mblock}</div>'
     return PAGE.format(iv=INTERVAL, cards=cards)
 
 

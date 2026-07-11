@@ -1,0 +1,38 @@
+{
+  "uid": "mini-soc-savior-v1",
+  "title": "08 – Savior AI Companion",
+  "tags": ["mini-soc", "savior", "ai", "llm"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "type": "text",
+      "title": "",
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:6px 10px;line-height:1.7\"><b style=\"font-size:16px\">🛡️ Savior AI — SOC Companion (savior_v2, lokal + GPU)</b><br/>AI membaca <b>alert Wazuh</b> + <b>metrics pipeline Grafana</b> (MISP · Shuffle · ML engine · volume log) lalu triase TP/FP tiap 5 menit.<br/>Buka penuh: <a href=\"http://localhost:8899\" target=\"_blank\">Savior Monitor :8899</a> &nbsp;·&nbsp; <a href=\"http://localhost:3030\" target=\"_blank\">💬 Chat dengan Savior :3030</a> &nbsp;·&nbsp; <a href=\"https://localhost\" target=\"_blank\">Wazuh dashboard :443</a></div>"
+      }
+    },
+    {
+      "type": "text",
+      "title": "🤖 Savior Monitor — triase otomatis (Wazuh + metrics Grafana, tiap 5 menit)",
+      "gridPos": { "h": 17, "w": 14, "x": 0, "y": 3 },
+      "options": {
+        "mode": "html",
+        "content": "<iframe src=\"http://localhost:8899\" style=\"width:100%;height:100%;min-height:620px;border:0;border-radius:6px;background:#0d1117\" title=\"Savior Monitor\"></iframe>"
+      }
+    },
+    {
+      "type": "text",
+      "title": "💬 Chat dengan Savior (Open WebUI + Wazuh Grounding)",
+      "gridPos": { "h": 17, "w": 10, "x": 14, "y": 3 },
+      "options": {
+        "mode": "html",
+        "content": "<iframe src=\"http://localhost:3030\" style=\"width:100%;height:100%;min-height:620px;border:0;border-radius:6px;background:#0d1117\" title=\"Chat Savior\"></iframe><div style=\"font-size:11px;color:#8b949e;padding-top:4px\">Kalau iframe kosong (dibatasi browser), buka langsung: <a href=\"http://localhost:3030\" target=\"_blank\">http://localhost:3030</a></div>"
+      }
+    }
+  ]
+}
