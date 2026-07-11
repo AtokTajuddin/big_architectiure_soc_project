@@ -78,8 +78,8 @@
       "baseUrl": "http://127.0.0.1:11434",
       "models": [
         {
-          "id": "dticlaw-qwen:latest",
-          "name": "dticlaw-qwen:latest",
+          "id": "savior_v2:latest",
+          "name": "savior_v2:latest",
           "reasoning": false,
           "input": [
             "text"
@@ -90,197 +90,15 @@
             "cacheRead": 0,
             "cacheWrite": 0
           },
-          "contextWindow": 32768,
+          "contextWindow": 131072,
           "maxTokens": 8192,
           "compat": {
             "supportsTools": true,
-            "supportsUsageInStreaming": true
-          }
-        },
-        {
-          "id": "qwen2.5:14b-instruct",
-          "name": "qwen2.5:14b-instruct",
-          "reasoning": false,
-          "input": [
-            "text"
-          ],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 32768,
-          "maxTokens": 8192,
-          "compat": {
-            "supportsTools": true,
-            "supportsUsageInStreaming": true
-          }
-        },
-        {
-          "id": "qwen2.5:14b",
-          "name": "qwen2.5:14b",
-          "reasoning": false,
-          "input": [
-            "text"
-          ],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 32768,
-          "maxTokens": 8192,
-          "compat": {
-            "supportsTools": true,
-            "supportsUsageInStreaming": true
-          }
-        },
-        {
-          "id": "qwen2.5:7b-instruct",
-          "name": "qwen2.5:7b-instruct",
-          "reasoning": false,
-          "input": [
-            "text"
-          ],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 32768,
-          "maxTokens": 8192,
-          "compat": {
-            "supportsTools": true,
-            "supportsUsageInStreaming": true
-          }
-        },
-        {
-          "id": "qwen2.5vl:7b",
-          "name": "qwen2.5vl:7b",
-          "reasoning": false,
-          "input": [
-            "text",
-            "image"
-          ],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 128000,
-          "maxTokens": 8192,
-          "compat": {
-            "supportsTools": false,
-            "supportsUsageInStreaming": true
-          }
-        },
-        {
-          "id": "gemini-3-flash-preview:cloud",
-          "name": "gemini-3-flash-preview:cloud",
-          "reasoning": true,
-          "input": [
-            "text",
-            "image"
-          ],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 1048576,
-          "maxTokens": 8192,
-          "compat": {
-            "supportsTools": true,
-            "supportsUsageInStreaming": true
-          }
-        },
-        {
-          "id": "dticlaw-gemma:latest",
-          "name": "dticlaw-gemma:latest",
-          "reasoning": false,
-          "input": [
-            "text"
-          ],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 12288,
-          "maxTokens": 8192,
-          "compat": {
-            "supportsTools": false,
-            "supportsUsageInStreaming": true
-          }
-        },
-        {
-          "id": "deepseek-v4-pro:cloud",
-          "name": "deepseek-v4-pro:cloud",
-          "reasoning": true,
-          "input": [
-            "text"
-          ],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 524288,
-          "maxTokens": 8192,
-          "compat": {
-            "supportsTools": true,
-            "supportsUsageInStreaming": true
-          }
-        },
-        {
-          "id": "gemma2:9b",
-          "name": "gemma2:9b",
-          "reasoning": false,
-          "input": [
-            "text"
-          ],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 8192,
-          "maxTokens": 8192,
-          "compat": {
-            "supportsTools": false,
-            "supportsUsageInStreaming": true
-          }
-        },
-        {
-          "id": "bge-m3:latest",
-          "name": "bge-m3:latest",
-          "reasoning": false,
-          "input": [
-            "text"
-          ],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 8192,
-          "maxTokens": 8192,
-          "compat": {
-            "supportsTools": false,
             "supportsUsageInStreaming": true
           }
         }
       ],
-      "apiKey": "OLLAMA_API_KEY",
+      "apiKey": "ollama-local",
       "api": "ollama"
     }
   }
