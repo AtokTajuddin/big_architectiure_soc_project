@@ -1,9 +1,73 @@
-﻿venv/
-.venv/
+# ============================================================
+#  SOC_Local .gitignore
+#  Tujuan: jaga repo tetap ramping. Checkpoint hanya menangkap
+#  source/config/script project, BUKAN data runtime/model besar.
+# ============================================================
+
+# --- Secrets / env ---
+.env
+*.env
+!*.env.example
+*.key
+*.pem
+secrets/
+
+# --- Python venv ---
+soc_project/.venv/
+**/.venv/
 __pycache__/
 *.pyc
+
+# --- Data runtime & log besar (15GB+) ---
+soc_project/logs/
+**/logs/
+*.log
+
+# --- Archive / artefak besar ---
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# --- Model AI chatbot (23GB, di-version terpisah, bukan via git ini) ---
+Model_Chatbot/
+
+# --- (dashboard kini di-track langsung di branch ini) ---
+#     Di-checkpoint lewat git-nya sendiri oleh scripts/checkpoint.sh,
+#     bukan disematkan sebagai submodule di repo ini. ---
+
+# --- savior_v2: bobot model raksasa (22GB) — hanya script/notebook yang di-track ---
+soc_project/savior_v2/base/
+soc_project/savior_v2/sft/
+soc_project/savior_v2/sft_final/
+soc_project/savior_v2/serve/llama.cpp/
+soc_project/savior_v2/serve/.venv/
+*.gguf
+*.safetensors
+*.ipynb.bak*
+
+# --- dticlaw (fork OpenClaw): build artifacts & deps ---
+soc_project/dticlaw/node_modules/
+soc_project/dticlaw/dist/
+soc_project/dticlaw/.artifacts/
+
+# --- Repo git terpisah (clone, punya .git sendiri) ---
+soc_project/wazuh-local/
+soc_project/sigma/
+
+# --- Data runtime Savior Monitor ---
+soc_project/savior-monitor/data/
+
+# --- Folder backup .git yang dibuat saat cleanup ---
+/SOC_Local_git-backup_*/
+
+# --- OS / editor junk ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
 .idea/
 .vscode/
-*.zip
-*.tar.gz
-*.log
+
+# --- Runtime state & sesi agent dticlaw ---
+soc_project/dticlaw/.dticlaw-state/agents/*/sessions/
