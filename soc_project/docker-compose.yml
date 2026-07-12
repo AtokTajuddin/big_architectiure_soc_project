@@ -132,6 +132,8 @@ services:
       - GF_PATHS_PLUGINS=/var/lib/grafana/plugins
       - GF_SERVER_ROOT_URL=http://localhost:3000
       - GF_FEATURE_TOGGLES_ENABLE=ngalert
+      # izinkan iframe (embed Savior Monitor & chat di dashboard 08)
+      - GF_PANELS_DISABLE_SANITIZE_HTML=true
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro

@@ -1,0 +1,14 @@
+[Unit]
+Description=DTIClaw — sandboxed AI gateway + dashboard
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Atok/AI_ML_College/praktikum-modul-5/Prkatikum_github/praktikum-ai-modul5/Agentic/dticlaw
+ExecStart=%h/Atok/AI_ML_College/praktikum-modul-5/Prkatikum_github/praktikum-ai-modul5/Agentic/dticlaw/scripts/dticlaw-service.sh run
+ExecStop=%h/Atok/AI_ML_College/praktikum-modul-5/Prkatikum_github/praktikum-ai-modul5/Agentic/dticlaw/scripts/dticlaw-service.sh stop
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

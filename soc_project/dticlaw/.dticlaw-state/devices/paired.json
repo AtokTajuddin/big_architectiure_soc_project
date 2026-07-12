@@ -1,0 +1,34 @@
+{
+  "ddd8d08a5e1b21c76f9086ef683d0b4e1402cee903ca071dc2bd491c30270f80": {
+    "deviceId": "ddd8d08a5e1b21c76f9086ef683d0b4e1402cee903ca071dc2bd491c30270f80",
+    "publicKey": "hfWiqfmQThE54coKwl4G6YBaMst9-vP4O9D2jvQloAU",
+    "platform": "linux",
+    "clientId": "cli",
+    "clientMode": "cli",
+    "role": "operator",
+    "roles": [
+      "operator"
+    ],
+    "scopes": [
+      "operator.write"
+    ],
+    "approvedScopes": [
+      "operator.write"
+    ],
+    "tokens": {
+      "operator": {
+        "token": "ZKzPAPy2J6CnDZyJvhkG8sxlTjkMs6qsQUOdY__A3ig",
+        "role": "operator",
+        "scopes": [
+          "operator.read",
+          "operator.write"
+        ],
+        "createdAtMs": 1781403958709
+      }
+    },
+    "createdAtMs": 1781403958709,
+    "approvedAtMs": 1781403958709,
+    "lastSeenAtMs": 1781601349900,
+    "lastSeenReason": "connect"
+  }
+}

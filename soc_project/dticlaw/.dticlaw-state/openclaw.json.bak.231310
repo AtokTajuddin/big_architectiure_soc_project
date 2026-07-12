@@ -1,0 +1,40 @@
+{
+  "gateway": {
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "none"
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": "ollama/gemma2:9b",
+      "workspace": "./workspace",
+      "skipBootstrap": true
+    },
+    "list": [
+      {
+        "id": "dticlaw",
+        "default": true,
+        "workspace": "./workspace",
+        "model": {
+          "primary": "ollama/dticlaw-gemma"
+        },
+        "skills": [
+          "dticlaw-research",
+          "dticlaw-writer",
+          "dticlaw-rag"
+        ],
+        "identity": {
+          "name": "DTIClaw",
+          "theme": "asisten AI yang dikembangkan oleh Atok Tajuddin sejak 5 Juni 2026",
+          "emoji": "🦞"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "lastTouchedVersion": "0.0.0",
+    "lastTouchedAt": "2026-06-13T17:30:07.574Z"
+  }
+}

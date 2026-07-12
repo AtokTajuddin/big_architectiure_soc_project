@@ -1,0 +1,28 @@
+127.0.0.1   localhost
+::1         localhost ip6-localhost ip6-loopback
+
+# --- DTIClaw egress guard ---
+# Null-route OpenClaw first-party services (BOTH IPv4 0.0.0.0 and IPv6 :: so
+# AAAA records can't bypass the block) so nothing leaks to them, even if a
+# command/plugin tries. Local (Ollama 127.0.0.1) and vendor/web traffic
+# (DNS-resolved domains like duckduckgo, model vendors) are unaffected.
+0.0.0.0     openclaw.ai
+0.0.0.0     www.openclaw.ai
+0.0.0.0     docs.openclaw.ai
+0.0.0.0     api.openclaw.ai
+0.0.0.0     registry.openclaw.ai
+0.0.0.0     telemetry.openclaw.ai
+0.0.0.0     ios-push-relay.openclaw.ai
+0.0.0.0     clawhub.ai
+0.0.0.0     www.clawhub.ai
+0.0.0.0     api.clawhub.ai
+::          openclaw.ai
+::          www.openclaw.ai
+::          docs.openclaw.ai
+::          api.openclaw.ai
+::          registry.openclaw.ai
+::          telemetry.openclaw.ai
+::          ios-push-relay.openclaw.ai
+::          clawhub.ai
+::          www.clawhub.ai
+::          api.clawhub.ai

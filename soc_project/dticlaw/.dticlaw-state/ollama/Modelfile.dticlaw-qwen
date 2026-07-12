@@ -1,0 +1,8 @@
+# DTIClaw agent brain — qwen2.5:7b-instruct (tool-calling) untuk Agentic RAG.
+# num_ctx 16384: cukup untuk system prompt + tool results + history (qwen native 32k).
+# temperature rendah = pemanggilan tool & keputusan lebih konsisten (tidak ngawur).
+FROM qwen2.5:7b-instruct
+PARAMETER num_ctx 16384
+PARAMETER num_predict 2048
+PARAMETER temperature 0.1
+PARAMETER top_p 0.9

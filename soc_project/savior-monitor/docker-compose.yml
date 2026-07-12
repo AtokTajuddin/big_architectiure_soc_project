@@ -1,0 +1,22 @@
+services:
+  savior-monitor:
+    build: .
+    container_name: savior-monitor
+    network_mode: host          # akses Wazuh 9200 & Ollama 11434 di host
+    environment:
+      WAZUH_INDEXER_URL: "https://127.0.0.1:9200"
+      WAZUH_INDEXER_USER: "admin"
+      WAZUH_INDEXER_PASS: "SecretPassword"
+      OLLAMA_URL: "http://127.0.0.1:11434"
+      # Data Grafana (datasource yang sama dgn dashboard mini-SOC)
+      VM_URL: "http://127.0.0.1:8428"
+      VL_URL: "http://127.0.0.1:9428"
+      SAVIOR_MODEL: "savior_v2"
+      INTERVAL_SECONDS: "300"     # ringkasan tiap 5 menit
+      MAX_ALERTS: "20"
+      PORT: "8899"
+      # Daftar aset sah agar FP lebih akurat (opsional), pisah ;
+      KNOWN_ASSETS: "192.168.56.10=admin jump host/bastion sah"
+    volumes:
+      - ./data:/data            # history summaries.jsonl persistent
+    restart: unless-stopped
