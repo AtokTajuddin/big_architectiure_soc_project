@@ -102,14 +102,21 @@ services:
       - ./benthos/config.yaml:/benthos.yaml:ro
       - ./logs:/var/run/tetragon:ro
       - ./logs/suricata:/var/log/suricata:ro
+      - wazuh-logs:/var/ossec-logs:ro
+    environment:
+      ML_INGEST_KEY: ${ML_INGEST_KEY:-nx_live_default_key_12345}
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
         echo "[Benthos] Waiting for log files..."
         until [ -f /var/run/tetragon/tetragon.log ]; do echo "  waiting tetragon..."; sleep 3; done
         until [ -f /var/log/suricata/eve.json ];     do echo "  waiting suricata..."; sleep 3; done
-        echo "[Benthos] Starting: tetragon + suricata tail"
-        tail -qn 0 -F /var/run/tetragon/tetragon.log /var/log/suricata/eve.json | exec /benthos -c /benthos.yaml
+        FILES="/var/run/tetragon/tetragon.log /var/log/suricata/eve.json"
+        WAZUH_ALERTS=/var/ossec-logs/alerts/alerts.json
+        for i in $$(seq 1 10); do [ -f "$$WAZUH_ALERTS" ] && break; echo "  waiting wazuh alerts ($$i/10)..."; sleep 3; done
+        if [ -f "$$WAZUH_ALERTS" ]; then FILES="$$FILES $$WAZUH_ALERTS"; echo "[Benthos] wazuh alerts.json ikut di-tail"; else echo "[Benthos] wazuh alerts.json tidak ada — lanjut tanpa wazuh (restart benthos setelah wazuh up)"; fi
+        echo "[Benthos] Starting tail: $$FILES"
+        tail -qn 0 -F $$FILES | exec /benthos -c /benthos.yaml
     depends_on:
       victorialogs:
         condition: service_healthy
@@ -219,6 +226,17 @@ services:
       SHUFFLE_WEBHOOK_A08: ${SHUFFLE_WEBHOOK_A08:-""}
       SHUFFLE_WEBHOOK_A09: ${SHUFFLE_WEBHOOK_A09:-""}
       SHUFFLE_WEBHOOK_A10: ${SHUFFLE_WEBHOOK_A10:-""}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      ML_INGEST_KEY: ${ML_INGEST_KEY:-nx_live_default_key_12345}
+      DB_PATH: /app/data/nexus.db
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      SAVIOR_MODEL: ${SAVIOR_MODEL:-savior_v2:latest}
+      SAVIOR_ENABLED: ${SAVIOR_ENABLED:-true}
+      SAVIOR_MIN_SEVERITY: ${SAVIOR_MIN_SEVERITY:-high}
+    volumes:
+      - ml-engine-data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/health || exit 1"]
@@ -412,3 +430,9 @@ volumes:
   shuffle-apps:
   shuffle-files:
   dvwa-db-data:
+  ml-engine-data:
+  # Volume log Wazuh milik stack wazuh-local/single-node (harus sudah pernah dibuat;
+  # kalau belum: cd wazuh-local/single-node && docker compose up -d)
+  wazuh-logs:
+    external: true
+    name: single-node_wazuh_logs

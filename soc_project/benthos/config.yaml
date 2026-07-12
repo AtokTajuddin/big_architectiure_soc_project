@@ -10,28 +10,88 @@ pipeline:
   processors:
     - mapping: |
         let raw = content().string()
-        let is_suricata = $raw.contains("\"event_type\"")
-        let is_alert    = $raw.contains("\"event_type\":\"alert\"")
-        let is_tetragon = $raw.contains("process_kprobe") || $raw.contains("process_exec")
+        let doc = $raw.parse_json().catch({})
 
-        let job = if $is_suricata { "suricata" } else { "tetragon" }
+        # Klasifikasi berbasis STRUKTUR JSON ($doc), bukan substring mentah —
+        # substring rapuh: argumen sebuah proses bisa memuat teks
+        # "process_exec"/"security_file_open" dan salah terklasifikasi.
+        let has_kprobe = $doc.exists("process_kprobe")
+        let has_exec   = $doc.exists("process_exec")
+        let has_exit   = $doc.exists("process_exit")
 
-        let level = if $is_suricata {
-          if $raw.contains("\"alert\"") { "critical" }
-          else if $raw.contains("\"ssh\"")  { "warn" }
+        let is_suricata = $doc.exists("event_type")
+        let is_alert    = $doc.event_type.or("") == "alert"
+        # process_exit = proses selesai, TIDAK PERNAH alert. Hanya kprobe/exec.
+        let is_tetragon = $has_kprobe || $has_exec
+        # Wazuh alerts.json: selalu punya rule.level numerik
+        let wazuh_level = $doc.rule.level.or(-1)
+        let is_wazuh    = $wazuh_level >= 0
+
+        let job = if $is_wazuh { "wazuh" } else if $is_suricata { "suricata" } else { "tetragon" }
+
+        let level = if $is_wazuh {
+          if $wazuh_level >= 12 { "critical" }
+          else if $wazuh_level >= 7 { "warn" }
+          else { "info" }
+        } else if $is_suricata {
+          if $doc.exists("alert") { "critical" }
+          else if $doc.exists("ssh")  { "warn" }
           else { "info" }
         } else {
-          if $raw.contains("SIGKILL") || $raw.contains("kprobe") { "warn" }
+          if $has_kprobe { "warn" }
           else { "info" }
         }
 
+        # Yang diteruskan ke ML engine: alert suricata, wazuh level >= 6,
+        # dan tetragon HANYA yang mencurigakan. Dua rem penting:
+        # 1. exec biasa (healthcheck, cron) = puluhan/detik, bukan alert;
+        # 2. kprobe tcp_connect memantau SEMUA koneksi — termasuk koneksi
+        #    stack SOC sendiri (ml-engine->victorialogs dst) = feedback loop.
+        #    Hanya diteruskan bila asalnya binary khas reverse-shell.
+        let kfunc = $doc.process_kprobe.function_name.or("")
+        let kbin  = $doc.process_kprobe.process.binary.or("")
+        let kbase = if $kbin != "" { $kbin.split("/").index(-1) } else { "" }
+        # path file yang diakses (security_file_open) — ambil dari file_arg
+        let kpath = $doc.process_kprobe.args.or([]).map_each(a -> a.file_arg.path.or("")).join(" ")
+        let shell_bins = ["bash","sh","dash","ash","zsh","nc","ncat","netcat","perl","ruby","php"]
+        # security_file_open: /etc/passwd dibaca hampir semua proses (lookup libc/runc) —
+        # sinyal asli hanya file benar-benar sensitif (shadow, kunci, token).
+        let file_sensitive = (
+          $kpath.contains("shadow")         ||
+          $kpath.contains(".ssh")           ||
+          $kpath.contains("id_rsa")         ||
+          $kpath.contains("sudoers")        ||
+          $kpath.contains("serviceaccount")
+        )
+        let kprobe_forward = $has_kprobe && ($kfunc != "tcp_connect" || $shell_bins.contains($kbase)) && ($kfunc != "security_file_open" || $file_sensitive)
+
+        # process_exec mencurigakan: cek ARGUMEN eksekusi (mis. "bash -i >& /dev/tcp/..").
+        let eargs = $doc.process_exec.process.arguments.or("")
+        let ebin  = $doc.process_exec.process.binary.or("")
+        let exec_suspicious = $has_exec && (
+          $eargs.contains("/dev/tcp")   ||
+          $ebin.contains("nsenter")     ||
+          $eargs.contains("nsenter")    ||
+          $eargs.contains("serviceaccount") ||
+          $ebin.contains("sudoedit")    ||
+          $eargs.contains("shell.php")  ||
+          $eargs.contains("chmod 777")  ||
+          $eargs.contains("base64 -d")  ||
+          $eargs.contains("bash -i")    ||
+          $eargs.contains("/etc/shadow")
+        )
+
+        let tetragon_suspicious = $kprobe_forward || $exec_suspicious
+        let forward_ml = $is_alert || $tetragon_suspicious || ($is_wazuh && $wazuh_level >= 6)
+
         meta raw_line   = $raw
-        meta is_alert   = if ($is_alert || $is_tetragon) { "true" } else { "false" }
+        meta source     = $job
+        meta is_alert   = if $forward_ml { "true" } else { "false" }
 
         # Filter out noisy events to prevent VictoriaLogs exhaustion
-        if $is_suricata && !$is_alert {
+        if $is_suricata && !$is_alert && !$is_wazuh {
           root = deleted()
-        } else if !$is_suricata && !$is_tetragon {
+        } else if !$is_suricata && !$is_tetragon && !$is_wazuh {
           root = deleted()
         } else {
 
@@ -69,7 +129,7 @@ output:
           - mapping: |
               let is_alert = meta("is_alert")
               root = if $is_alert == "true" {
-                {"raw": meta("raw_line")}
+                {"raw": meta("raw_line"), "source_hint": meta("source")}
               } else {
                 deleted()
               }
@@ -78,6 +138,7 @@ output:
           verb: POST
           headers:
             Content-Type: application/json
+            Authorization: "Bearer ${ML_INGEST_KEY}"
           max_in_flight: 8
           batching:
             count: 1

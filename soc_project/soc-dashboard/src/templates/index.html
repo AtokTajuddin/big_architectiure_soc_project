@@ -2406,6 +2406,11 @@ resp = requests.post(
             </div>
 
             <div class="detail-group">
+                <span class="detail-label">Savior AI — Verdict &amp; Penjelasan Awam</span>
+                <div class="detail-value" id="detail-savior" style="white-space: pre-wrap; border-left: 4px solid var(--status-green, #3fbf6f);">—</div>
+            </div>
+
+            <div class="detail-group">
                 <span class="detail-label">Raw Incident Payload</span>
                 <div class="detail-value code" id="detail-raw">Raw log line</div>
             </div>
@@ -2449,6 +2454,17 @@ resp = requests.post(
         const detailDestIp = document.getElementById('detail-dest-ip');
         const detailSignature = document.getElementById('detail-signature');
         const detailRaw = document.getElementById('detail-raw');
+        const detailSavior = document.getElementById('detail-savior');
+
+        function saviorText(alert) {
+            switch (alert.savior_status) {
+                case 'DONE':    return alert.savior_explanation || '—';
+                case 'PENDING': return '⏳ Savior sedang menganalisis alert ini di GPU lokal...';
+                case 'FAILED':  return '⚠ Savior tidak terjangkau (cek Ollama di host).';
+                case 'SKIPPED': return 'Dilewati — severity di bawah ambang analisis Savior.';
+                default:        return '—';
+            }
+        }
 
         // Close drawer actions
         document.getElementById('close-drawer-btn').addEventListener('click', closeDrawer);
@@ -2474,8 +2490,9 @@ resp = requests.post(
             detailCwe.textContent = alert.cwe_id;
             detailNist.textContent = alert.nist_mapping;
             detailConfidence.textContent = alert.confidence + '%';
-            detailRaw.textContent = typeof alert.raw === 'string' && alert.raw.startsWith('{') ? 
+            detailRaw.textContent = typeof alert.raw === 'string' && alert.raw.startsWith('{') ?
                 JSON.stringify(JSON.parse(alert.raw), null, 2) : alert.raw;
+            detailSavior.textContent = saviorText(alert);
             
             detailSeverity.className = 'badge-pill ' + alert.severity.toLowerCase();
             detailSeverity.textContent = alert.severity;
@@ -3603,6 +3620,85 @@ resp = requests.post(
         function openKeysModal() {
             openModal('keys-modal');
             fetchApiKeys();
+            fetchAgentKeys();
+        }
+
+        // ---- Agent Identity Keypairs (Ed25519) ----
+        async function fetchAgentKeys() {
+            try {
+                const response = await fetch('/api/agent-keys/list');
+                if (!response.ok) return;
+                const keys = await response.json();
+                const tbody = document.getElementById('agent-keys-tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                keys.forEach(k => {
+                    const active = !k.revoked;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><code style="font-family:monospace; font-size:0.75rem;">${escapeHtml(k.key_id)}</code></td>
+                        <td><strong>${escapeHtml(k.label)}</strong></td>
+                        <td style="font-size:0.75rem;">${escapeHtml(k.last_used || 'belum pernah')}</td>
+                        <td><span class="badge-pill" style="background-color:${active ? 'var(--status-green-glow)' : 'var(--border-color)'}; color:${active ? 'var(--status-green)' : 'var(--text-muted)'}">${active ? 'ACTIVE' : 'REVOKED'}</span></td>
+                        <td>${active ? `<button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; background-color: var(--status-critical);" onclick="revokeAgentKey('${escapeHtml(k.key_id)}')">Revoke</button>` : ''}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error('Error fetching agent keys:', err);
+            }
+        }
+
+        async function generateAgentKeypair() {
+            const labelInput = document.getElementById('new-agent-key-label');
+            const label = labelInput ? labelInput.value.trim() : '';
+            if (!label) {
+                showToast('Keypair Error', 'Beri nama agent dulu (mis. savior-bridge).', 'warning');
+                return;
+            }
+            try {
+                const response = await fetch('/api/agent-keys/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ label: label })
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const credential = await response.json();
+
+                // Private key hanya ada di response ini — langsung unduh sebagai file kredensial
+                const blob = new Blob([JSON.stringify(credential, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `${credential.key_id}-credential.json`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+
+                showToast('Keypair Generated',
+                    `Kredensial ${credential.key_id} diunduh. PRIVATE KEY TIDAK BISA DIAMBIL LAGI — simpan file ini di agent ${label}.`,
+                    'success');
+                if (labelInput) labelInput.value = '';
+                fetchAgentKeys();
+            } catch (err) {
+                console.error('Error generating agent keypair:', err);
+                showToast('Keypair Error', 'Gagal membuat keypair agent.', 'danger');
+            }
+        }
+
+        async function revokeAgentKey(keyId) {
+            if (!confirm(`Revoke identitas agent ${keyId}? Semua request bertanda tangan key ini akan ditolak.`)) return;
+            try {
+                const response = await fetch('/api/agent-keys/revoke', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key_id: keyId })
+                });
+                if (response.ok) {
+                    showToast('Keypair Revoked', 'Identitas agent dicabut.', 'warning');
+                    fetchAgentKeys();
+                }
+            } catch (err) {
+                console.error('Error revoking agent key:', err);
+            }
         }
 
         async function fetchApiKeys() {
@@ -3702,7 +3798,62 @@ resp = requests.post(
         // Run updates
         fetchAlerts();
         fetchApiKeys();
+        fetchAgentKeys();
         let alertsPollHandle = setInterval(fetchAlerts, 2500);
+
+        // WebSocket live feed — polling 2.5s jadi fallback kalau WS putus
+        // fetchAlerts di-debounce: sensor bisa mengirim ratusan alert/detik
+        let wsRetryDelay = 2000;
+        let lastWsFetch = 0;
+        let wsFetchTimer = null;
+        function throttledFetchAlerts() {
+            const now = Date.now();
+            if (now - lastWsFetch >= 2000) {
+                lastWsFetch = now;
+                fetchAlerts();
+            } else if (!wsFetchTimer) {
+                wsFetchTimer = setTimeout(() => {
+                    wsFetchTimer = null;
+                    lastWsFetch = Date.now();
+                    fetchAlerts();
+                }, 2000 - (now - lastWsFetch));
+            }
+        }
+        function connectAlertSocket() {
+            const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+            const sock = new WebSocket(`${proto}://${location.host}/ws/alerts`);
+
+            sock.onopen = () => {
+                wsRetryDelay = 2000;
+                clearInterval(alertsPollHandle);
+                alertsPollHandle = setInterval(fetchAlerts, 30000); // fallback lambat
+                console.info('[WS] live feed tersambung');
+            };
+            sock.onmessage = (ev) => {
+                try {
+                    const msg = JSON.parse(ev.data);
+                    if (msg.type === 'alert_new') {
+                        throttledFetchAlerts();
+                    } else if (msg.type === 'alert_update') {
+                        const a = currentAlerts.find(x => x.id === msg.data.id);
+                        if (a) {
+                            a.savior_status = msg.data.savior_status;
+                            a.savior_explanation = msg.data.savior_explanation;
+                        }
+                        if (selectedAlertId === msg.data.id && detailSavior) {
+                            detailSavior.textContent = saviorText(msg.data);
+                        }
+                    }
+                } catch (e) { console.error('[WS] pesan tidak valid', e); }
+            };
+            sock.onclose = () => {
+                clearInterval(alertsPollHandle);
+                alertsPollHandle = setInterval(fetchAlerts, 2500);
+                setTimeout(connectAlertSocket, wsRetryDelay);
+                wsRetryDelay = Math.min(wsRetryDelay * 2, 30000);
+            };
+        }
+        connectAlertSocket();
 
         // Load saved theme on initial boot
         const savedTheme = localStorage.getItem('dashboard-theme');
@@ -4099,13 +4250,36 @@ resp = requests.post(
                             </tr>
                         </thead>
                         <tbody id="api-keys-tbody">
-                            <!-- Pre-populated active keys -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr style="border-color: var(--border-color); margin: 0.75rem 0;">
+
+                <h4 style="margin:0;"><i class="fa-solid fa-fingerprint"></i> Agent Identity Keypairs (Ed25519)</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                    Identitas kriptografis per-agent, seperti API key provider AI: <strong>private key diunduh SEKALI</strong>
+                    lalu dipasang ke agent mana pun (Savior, dticlaw, sistem eksternal). Server hanya menyimpan public key —
+                    setiap request agent ditandatangani, bukan sekadar menempel token.
+                </p>
+
+                <div style="display:flex; gap:0.5rem; margin-bottom: 0.5rem;">
+                    <input type="text" id="new-agent-key-label" class="form-control" placeholder="Nama agent (mis. savior-bridge, dticlaw-prod)" style="flex:1;">
+                    <button class="btn" onclick="generateAgentKeypair()">Generate Keypair</button>
+                </div>
+
+                <div class="table-wrapper" style="max-height: 200px; overflow-y: auto;">
+                    <table class="event-table">
+                        <thead>
                             <tr>
-                                <td><strong>Default Switch</strong></td>
-                                <td><code style="font-family:monospace; font-size:0.75rem;">nx_live_default_key_12345</code></td>
-                                <td><span class="badge-pill" style="background-color:var(--status-green-glow); color:var(--status-green)">ACTIVE</span></td>
-                                <td><button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; background-color: var(--status-critical);" onclick="revokeApiKey('nx_live_default_key_12345', this)">Revoke</button></td>
+                                <th>Key ID</th>
+                                <th>Agent</th>
+                                <th>Last Used</th>
+                                <th>Status</th>
+                                <th>Action</th>
                             </tr>
+                        </thead>
+                        <tbody id="agent-keys-tbody">
                         </tbody>
                     </table>
                 </div>
